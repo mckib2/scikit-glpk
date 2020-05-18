@@ -19,7 +19,7 @@ Note that there are several projects that aim for something like this, but which
 - `pulp <https://launchpad.net/pulp-or>`_ : Calls `glpsol` from command line (writes problems, solutions to file instead of shared memory model)
 - `yaposib <https://github.com/coin-or/yaposib>`_ : seems dead? Bigger than I want
 - `ecyglpki <https://github.com/equaeghe/ecyglpki/tree/0.1.0>`_ : dead
-- `swiglpk <https://github.com/biosustain/swiglpk`_ : GPL licensed, low level
+- `swiglpk <https://github.com/biosustain/swiglpk>`_ : GPL licensed, low level
 
 Most existing projects lean to GPL licenses.  Not a bad thing, but would hinder adoption into scipy.
 
