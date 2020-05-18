@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.optimize import linprog
 
-from glpk import _glpk, GLPK
+from glpk import glpk, GLPK
 
 if __name__ == '__main__':
 
@@ -16,15 +16,17 @@ if __name__ == '__main__':
     A_eq = [[-10, 1, 1, -8]]
     b_eq = [-4]
     bnds = None
-    res = _glpk(
+    res = glpk(
         c, A_ub, b_ub, A_eq, b_eq, bnds,
         message_level=GLPK.GLP_MSG_OFF,
         maxit=100,
         timeout=10,
+        solver='interior',
         simplex_options={
-            'basis': 'adv',
+            'init_basis': 'adv',
             'method': 'dual',
             'presolve': True,
+            'exact': True,
         })
     print('GLPK:')
     print(res)
