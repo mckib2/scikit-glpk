@@ -9,6 +9,7 @@ Background
 Th `GNU Linear Programming Kit (GLPK) <https://www.gnu.org/software/glpk/>`_ has simplex, interior-point, and MIP solvers all callable from a C library.  We would like to be able to use these from within Python and be potentially included as a backend for scipy's `linprog` function.
 
 Note that there are several projects that aim for something like this, but which don't match up for what I'm looking for:
+
 - `python-glpk <https://www.dcc.fc.up.pt/~jpp/code/python-glpk/>`_ : no longer maintained (dead as of ~2013)
 - `PyGLPK <http://tfinley.net/software/pyglpk/>`_ : GPL licensed
 - `PyMathProg <https://pypi.org/project/pymprog/>`_ : GPL licensed, uses different conventions than that of `linprog`
