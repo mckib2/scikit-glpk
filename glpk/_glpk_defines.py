@@ -38,6 +38,23 @@ class glp_iptcp(ctypes.Structure):
 class glp_mpscp(ctypes.Structure):
     _fields_ = []
 
+class glp_bfcp(ctypes.Structure):
+    _fields_ = [
+        ('msg_lev', ctypes.c_int),       # (not used)
+        ('type', ctypes.c_int),          # factorization type:
+        ('lu_size', ctypes.c_int),       # (not used)
+        ('piv_tol', ctypes.c_double),    # sgf_piv_tol
+        ('piv_lim', ctypes.c_int),       # sgf_piv_lim
+        ('suhl', ctypes.c_int),          # sgf_suhl
+        ('eps_tol', ctypes.c_double),    # sgf_eps_tol
+        ('max_gro', ctypes.c_double),    # (not used)
+        ('nfs_max', ctypes.c_int),       # fhvint.nfs_max
+        ('upd_tol', ctypes.c_double),    # (not used)
+        ('nrs_max', ctypes.c_int),       # scfint.nn_max
+        ('rs_size', ctypes.c_int),       # (not used)
+        ('foo_bar', ctypes.c_double*38), # (reserved)
+    ]
+
 # LP problem structure
 class glp_prob(ctypes.Structure):
     class DMP(ctypes.Structure):
@@ -199,6 +216,13 @@ class GLPK:
     # MPS formats
     GLP_MPS_DECK = 1  # fixed (ancient)
     GLP_MPS_FILE = 2  # free (modern)
+
+    # Factorization strategies
+    GLP_BF_LUF = 0  # 0x00  # plain LU-factorization
+    GLP_BF_BTF = 16 # 0x10  # block triangular LU-factorization
+    GLP_BF_FT = 1   # 0x01  # Forrest-Tomlin (LUF only)
+    GLP_BF_BG = 2   # 0x02  # Schur compl. + Bartels-Golub
+    GLP_BF_GR = 3   # 0x03  # Schur compl. + Givens rotation
 
     def __init__(self, libpath):
 
@@ -420,6 +444,13 @@ class GLPK:
             ctypes.POINTER(glp_mpscp), # should be NULL
             ctypes.c_char_p,           # filename
         ]
+
+        # LP Basis Factorization
+        _lib.glp_get_bfcp.restype = None
+        _lib.glp_get_bfcp.argtypes = [ctypes.POINTER(glp_prob), ctypes.POINTER(glp_bfcp)]
+
+        _lib.glp_set_bfcp.restype = None
+        _lib.glp_set_bfcp.argtypes = [ctypes.POINTER(glp_prob), ctypes.POINTER(glp_bfcp)]
 
 
         # Make accessible for front-end interface

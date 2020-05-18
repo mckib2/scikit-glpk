@@ -71,7 +71,7 @@ def glpk(
             - ``cbg`` : Schur complement + Bartels-Golub update
             - ``cgr`` : Schur complement + Givens rotation update
 
-    message_level : {  }
+    message_level : { GLP_MSG_OFF, GLP_MSG_ERR, GLP_MSG_ON, GLP_MSG_ON, GLP_MSG_ALL, GLP_MSG_DBG }
         Verbosity level of logging to stdout.
         Only applied when ``disp=True``. Default is ``GLP_MSG_ERR``.
         One of the following:
@@ -276,6 +276,18 @@ def glpk(
 
     # Scale the problem
     _lib.glp_scale_prob(prob, GLPK.GLP_SF_AUTO) # do auto scaling for now
+
+    # Select basis factorization method
+    bfcp = glp_bfcp()
+    _lib.glp_get_bfcp(prob, ctypes.byref(bfcp))
+    bfcp.type = {
+        'luf+ft': GLPK.GLP_BF_LUF + GLPK.GLP_BF_FT,
+        'luf+cbg': GLPK.GLP_BF_LUF + GLPK.GLP_BF_BG,
+        'luf+cgr': GLPK.GLP_BF_LUF + GLPK.GLP_BF_GR,
+        'btf+cbg': GLPK.GLP_BF_BTF + GLPK.GLP_BF_BG,
+        'btf+cgr': GLPK.GLP_BF_BTF + GLPK.GLP_BF_GR,
+    }[basis_fac]
+    _lib.glp_set_bfcp(prob, ctypes.byref(bfcp))
 
     # Run the solver
     if solver == 'simplex':
