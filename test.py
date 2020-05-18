@@ -22,6 +22,7 @@ if __name__ == '__main__':
         maxit=100,
         timeout=10,
         solver='interior',
+        basis_fac='btf+cbg',
         simplex_options={
             'init_basis': 'adv',
             'method': 'dual',

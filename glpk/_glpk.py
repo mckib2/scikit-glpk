@@ -7,7 +7,7 @@ import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.optimize import OptimizeWarning, OptimizeResult
 
-from ._glpk_defines import GLPK, glp_smcp, glp_iptcp
+from ._glpk_defines import GLPK, glp_smcp, glp_iptcp, glp_bfcp
 
 def glpk(
         c,
