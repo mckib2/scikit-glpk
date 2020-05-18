@@ -1,5 +1,7 @@
 
 import ctypes
+import os
+import pathlib
 
 from numpy.ctypeslib import ndpointer
 
@@ -32,6 +34,9 @@ class glp_iptcp(ctypes.Structure):
         ('ord_alg', ctypes.c_int),
         ('foo_bar', ctypes.c_double*48),
     ]
+
+class glp_mpscp(ctypes.Structure):
+    _fields_ = []
 
 # LP problem structure
 class glp_prob(ctypes.Structure):
@@ -191,14 +196,20 @@ class GLPK:
     GLP_ORD_AMD = 2
     GLP_ORD_SYMAMD = 3
 
+    # MPS formats
+    GLP_MPS_DECK = 1  # fixed (ancient)
+    GLP_MPS_FILE = 2  # free (modern)
+
     def __init__(self, libpath):
 
-        #glp_prob = self.glp_prob
-        #glp_smcp = self.glp_smcp
-
-        # Load the shared library
-        #so = '/home/nicholas/Downloads/glpk-4.65/src/.libs/libglpk.so'
+        # Load the shared library;
+        # Windows Octave installs require that we load from
+        # the same directory as libglpk.dll is found
+        cwd = os.getcwd()
+        os.chdir(pathlib.Path(libpath).parent)
         _lib = ctypes.cdll.LoadLibrary(libpath)
+        os.chdir(cwd)
+
         _lib.glp_version.restype = ctypes.c_char_p
 
         _lib.glp_create_prob.restype = ctypes.POINTER(glp_prob)
@@ -277,6 +288,9 @@ class GLPK:
         _lib.glp_get_obj_coef.restype = ctypes.c_double
         _lib.glp_get_obj_coef.argtypes = [ctypes.POINTER(glp_prob), ctypes.c_int]
 
+        _lib.glp_get_num_cols.restype = ctypes.c_int
+        _lib.glp_get_num_cols.argtypes = [ctypes.POINTER(glp_prob)]
+
         _lib.glp_get_col_name.restype = ctypes.c_char_p
         _lib.glp_get_col_name.argtypes = [ctypes.POINTER(glp_prob), ctypes.c_int]
 
@@ -285,6 +299,50 @@ class GLPK:
 
         _lib.glp_get_num_nz.restype = ctypes.c_int
         _lib.glp_get_num_nz.argtypes = [ctypes.POINTER(glp_prob)]
+
+        _lib.glp_get_mat_row.restype = ctypes.c_int # len of col indices and values
+        _lib.glp_get_mat_row.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # ith row
+            ctypes.POINTER(ctypes.c_int), # col indices
+            ctypes.POINTER(ctypes.c_double), # values
+        ]
+
+        _lib.glp_get_row_type.restype = ctypes.c_int
+        _lib.glp_get_row_type.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # ith row
+        ]
+
+        _lib.glp_get_row_lb.restype = ctypes.c_double
+        _lib.glp_get_row_lb.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # ith row
+        ]
+
+        _lib.glp_get_row_ub.restype = ctypes.c_double
+        _lib.glp_get_row_ub.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # ith row
+        ]
+
+        _lib.glp_get_col_type.restype = ctypes.c_int
+        _lib.glp_get_col_type.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # jth col
+        ]
+
+        _lib.glp_get_col_lb.restype = ctypes.c_double
+        _lib.glp_get_col_lb.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # jth col
+        ]
+
+        _lib.glp_get_col_ub.restype = ctypes.c_double
+        _lib.glp_get_col_ub.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # jth col
+        ]
 
         _lib.glp_get_status.restype = ctypes.c_int
         _lib.glp_get_status.argtypes = [ctypes.POINTER(glp_prob)]
@@ -345,6 +403,24 @@ class GLPK:
         # Cleanup
         _lib.glp_delete_prob.restype = None
         _lib.glp_delete_prob.argtypes = [ctypes.POINTER(glp_prob)]
+
+        # Utility
+        _lib.glp_read_mps.restype = ctypes.c_int
+        _lib.glp_read_mps.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int,              # format (GLP_MPS_DECK or GLP_MPS_FILE)
+            ctypes.POINTER(glp_mpscp), # should be NULL
+            ctypes.c_char_p,           # filename
+        ]
+
+        _lib.glp_write_mps.restype = ctypes.c_int
+        _lib.glp_write_mps.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int,              # format (GLP_MPS_DECK or GLP_MPS_FILE)
+            ctypes.POINTER(glp_mpscp), # should be NULL
+            ctypes.c_char_p,           # filename
+        ]
+
 
         # Make accessible for front-end interface
         self._lib = _lib
