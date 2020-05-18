@@ -41,7 +41,7 @@ class glp_mpscp(ctypes.Structure):
 class glp_bfcp(ctypes.Structure):
     _fields_ = [
         ('msg_lev', ctypes.c_int),       # (not used)
-        ('type', ctypes.c_int),          # factorization type:
+        ('type', ctypes.c_int),          # factorization type
         ('lu_size', ctypes.c_int),       # (not used)
         ('piv_tol', ctypes.c_double),    # sgf_piv_tol
         ('piv_lim', ctypes.c_int),       # sgf_piv_lim
@@ -54,6 +54,43 @@ class glp_bfcp(ctypes.Structure):
         ('rs_size', ctypes.c_int),       # (not used)
         ('foo_bar', ctypes.c_double*38), # (reserved)
     ]
+
+# integer optimizer control parameters
+class glp_tree(ctypes.Structure):
+    _fields_ = []
+class glp_iocp(ctypes.Structure):
+    _fields_ = [
+        ('msg_lev', ctypes.c_int),       # message level (see glp_smcp)
+        ('br_tech', ctypes.c_int),       # branching technique
+        ('bt_tech', ctypes.c_int),       # backtracking technique:
+        ('tol_int', ctypes.c_double),    # mip.tol_int
+        ('tol_obj', ctypes.c_double),    # mip.tol_obj
+        ('tm_lim', ctypes.c_int),        # mip.tm_lim (milliseconds)
+        ('out_frq', ctypes.c_int),       # mip.out_frq (milliseconds)
+        ('out_dly', ctypes.c_int),       # mip.out_dly (milliseconds)
+        #void (*cb_func)(glp_tree *T, void *info);  # mip.cb_func
+        ('cb_func', ctypes.CFUNCTYPE(None, ctypes.POINTER(glp_tree), ctypes.c_void_p)),
+        ('cb_info', ctypes.c_void_p),    # mip.cb_info
+        ('cb_size', ctypes.c_int),       # mip.cb_size
+        ('pp_tech', ctypes.c_int),       # preprocessing technique:
+        ('mip_gap', ctypes.c_double),    # relative MIP gap tolerance
+        ('mir_cuts', ctypes.c_int),      # MIR cuts       (GLP_ON/GLP_OFF)
+        ('gmi_cuts', ctypes.c_int),      # Gomory's cuts  (GLP_ON/GLP_OFF)
+        ('cov_cuts', ctypes.c_int),      # cover cuts     (GLP_ON/GLP_OFF)
+        ('clq_cuts', ctypes.c_int),      # clique cuts    (GLP_ON/GLP_OFF)
+        ('presolve', ctypes.c_int),      # enable/disable using MIP presolver
+        ('binarize', ctypes.c_int),      # try to binarize integer variables
+        ('fp_heur', ctypes.c_int),       # feasibility pump heuristic
+        ('ps_heur', ctypes.c_int),       # proximity search heuristic
+        ('ps_tm_lim', ctypes.c_int),     # proxy time limit, milliseconds
+        ('sr_heur', ctypes.c_int),       # simple rounding heuristic
+        ('use_sol', ctypes.c_int),       # use existing solution
+        ('save_sol', ctypes.c_char_p),   # filename to save every new solution
+        ('alien', ctypes.c_int),         # use alien solver
+        ('flip', ctypes.c_int),          # use long-step dual simplex; not documented--should not be used
+        ('foo_bar', ctypes.c_double*23), # (reserved)
+    ]
+
 
 # LP problem structure
 class glp_prob(ctypes.Structure):
@@ -99,7 +136,6 @@ class glp_prob(ctypes.Structure):
         ('mip_stat', ctypes.c_int),
         ('mip_obj', ctypes.c_double),
     ]
-
 
 class GLPK:
 
@@ -223,6 +259,24 @@ class GLPK:
     GLP_BF_FT = 1   # 0x01  # Forrest-Tomlin (LUF only)
     GLP_BF_BG = 2   # 0x02  # Schur compl. + Bartels-Golub
     GLP_BF_GR = 3   # 0x03  # Schur compl. + Givens rotation
+
+    # Branching techniques
+    GLP_BR_FFV = 1  # first fractional variable
+    GLP_BR_LFV = 2  # last fractional variable
+    GLP_BR_MFV = 3  # most fractional variable
+    GLP_BR_DTH = 4  # heuristic by Driebeck and Tomlin
+    GLP_BR_PCH = 5  # hybrid pseudocost heuristic
+
+    # Backtracking technique
+    GLP_BT_DFS = 1  # depth first search
+    GLP_BT_BFS = 2  # breadth first search
+    GLP_BT_BLB = 3  # best local bound
+    GLP_BT_BPH = 4  # best projection heuristic
+
+    # MIP preprocessing
+    GLP_PP_NONE =  0 # disable preprocessing
+    GLP_PP_ROOT =  1 # preprocessing only on root level
+    GLP_PP_ALL = 2   # preprocessing on all levels
 
     def __init__(self, libpath):
 
@@ -412,6 +466,9 @@ class GLPK:
 
         _lib.glp_init_iptcp.restype = ctypes.c_int
         _lib.glp_init_iptcp.argtypes = [ctypes.POINTER(glp_iptcp)]
+
+        _lib.glp_init_iocp.restype = None
+        _lib.glp_init_iocp.argtypes = [ctypes.POINTER(glp_iocp)]
 
         # Simplex drivers
         _lib.glp_simplex.restype = ctypes.c_int

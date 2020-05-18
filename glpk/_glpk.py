@@ -7,7 +7,7 @@ import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.optimize import OptimizeWarning, OptimizeResult
 
-from ._glpk_defines import GLPK, glp_smcp, glp_iptcp, glp_bfcp
+from ._glpk_defines import GLPK, glp_smcp, glp_iptcp, glp_bfcp, glp_iocp
 
 def glpk(
         c,
@@ -48,7 +48,7 @@ def glpk(
             - ``up`` : double
 
         If the entry is ``None``, then ``type=GLP_FX`` and ``ub==lb==0``.
-    solver : { 'simplex', 'interior' }
+    solver : { 'simplex', 'interior', 'mip' }
         Use simplex (LP/MIP) or interior point method (LP only).
         Default is ``simplex``.
     sense : { 'GLP_MIN', 'GLP_MAX' }
@@ -413,6 +413,28 @@ def glpk(
 
             # We shouldn't be reading this field... But we will anyways
             res.nit = prob.contents.it_cnt
+
+    elif solver == 'mip':
+
+        # Make a control structure
+        iocp = glp_iocp()
+        _lib.glp_init_iocp(ctypes.byref(iocp))
+
+        # Set options
+        iocp.msg_lev = message_level*disp
+        iocp.br_tech = {
+            'first': GLPK.GLP_BR_FFV,
+            'last': GLPK.GLP_BR_LFV,
+            'mostf': GLPK.GLP_BR_MFV,
+            'drtom': GLPK.GLP_BR_DTH,
+            'pcost': GLPK.GLP_BR_PCH,
+        }[ip_options.get('branch', 'drtom')]
+        iocp.bt_tech = {
+            'dfs': GLPK.GLP_BT_DFS,
+            'bfs': GLPK.GLP_BT_BFS,
+            'bestp': GLPK.GLP_BT_BPH,
+            'bestb': GLPK.GLP_BT_BLB,
+        }[ip_options.get('backtrack', 'bestb')]
 
     else:
         raise ValueError('"%s" is not a recognized solver.' % solver)
