@@ -480,7 +480,7 @@ def glpk(
         ps_tm_lim = mip_options.get('proxy', 60)
         if ps_tm_lim:
             iocp.ps_heur = GLPK.GLP_ON
-            iocp.ps_tm_lim = ps_tm_lim
+            iocp.ps_tm_lim = ps_tm_lim*1000
         else:
             iocp.ps_heur = GLPK.GLP_OFF
             iocp.ps_tm_lim = 0
