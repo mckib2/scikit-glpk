@@ -538,9 +538,9 @@ def glpk(
     _lib.glp_delete_prob(prob)
 
     # Map status codes to scipy:
-    res.status = {
-        GLPK.GLP_OPT: 0,
-    }[res.status]
+    #res.status = {
+    #    GLPK.GLP_OPT: 0,
+    #}[res.status]
 
     return res
 
