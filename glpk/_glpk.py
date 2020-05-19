@@ -25,6 +25,7 @@ def glpk(
         disp=False,
         simplex_options=None,
         ip_options=None,
+        mip_options=None,
         libpath='/home/nicholas/Downloads/glpk-4.65/src/.libs/libglpk.so',
 ):
     '''GLPK ctypes interface.
@@ -143,6 +144,15 @@ def glpk(
         Options specific to MIP solver.
         The dictionary consists of the following fields:
 
+            - intcon : 1-D array
+                Array of integer contraints, specified as the 0-based
+                indices of the solution. Default is an empty array.
+            - bincon : 1-D array
+                Array of binary constraints, specified as the 0-based
+                indices of the solution. If any indices are duplicated
+                between ``bincon`` and ``intcon``, they will be
+                considered as binary constraints. Default is an empty
+                array.
             - nomip : bool
                 consider all integer variables as continuous
                 (allows solving MIP as pure LP). Default is ``False``.
@@ -166,12 +176,23 @@ def glpk(
                     - ``bestp`` : backtrack using the best projection heuristic
                     - ``bestb`` : backtrack using node with best local bound
 
+            - preprocess : { 'none', 'root', 'all' }
+                Preprocessing technique. Default is ``GLP_PP_ALL``.
+                One of the following:
+
+                    - ``none`` : disable preprocessing
+                    - ``root`` : perform preprocessing only on the root level
+                    - ``all`` : perform preprocessing on all levels
+
+            - round : bool
+                Simple rounding heuristic. Default is ``True``.
+
             - presolve : bool
                 Use MIP presolver. Default is ``True``.
 
             - binarize : bool
                 replace general integer variables by binary ones
-                (assumes ``presolve=True``). Default is ``False``.
+                (only used if ``presolve=True``). Default is ``False``.
 
             - fpump : bool
                 Apply feasibility pump heuristic. Default is ``False``.
@@ -188,12 +209,8 @@ def glpk(
                     - ``clique`` : clique cuts
                     - ``all`` : generate all cuts above
 
-            - tol : float
+            - gap_tol : float
                 Relative mip gap tolerance.
-
-            - minisat : bool
-                translate integer feasibility problem to CNF-SAT
-                and solve it with MiniSat solver. Default is ``False``.
 
             - bound : float
                 add inequality obj <= bound (minimization) or
@@ -220,6 +237,8 @@ def glpk(
         simplex_options = {}
     if ip_options is None:
         ip_options = {}
+    if mip_options is None:
+        mip_options = {}
 
     # Get the library
     _lib = GLPK(libpath)._lib
@@ -420,6 +439,15 @@ def glpk(
         iocp = glp_iocp()
         _lib.glp_init_iocp(ctypes.byref(iocp))
 
+        # Make variables integer- and binary-valued
+        if not mip_options.get('nomip', False):
+            intcon = mip_options.get('intcon', [])
+            for jj in intcon:
+                _lib.glp_set_col_kind(prob, jj+1, GLPK.GLP_IV)
+            bincon = mip_options.get('bincon', [])
+            for jj in bincon:
+                _lib.glp_set_col_kind(prob, jj+1, GLPK.GLP_BV)
+
         # Set options
         iocp.msg_lev = message_level*disp
         iocp.br_tech = {
@@ -428,13 +456,80 @@ def glpk(
             'mostf': GLPK.GLP_BR_MFV,
             'drtom': GLPK.GLP_BR_DTH,
             'pcost': GLPK.GLP_BR_PCH,
-        }[ip_options.get('branch', 'drtom')]
+        }[mip_options.get('branch', 'drtom')]
         iocp.bt_tech = {
             'dfs': GLPK.GLP_BT_DFS,
             'bfs': GLPK.GLP_BT_BFS,
             'bestp': GLPK.GLP_BT_BPH,
             'bestb': GLPK.GLP_BT_BLB,
-        }[ip_options.get('backtrack', 'bestb')]
+        }[mip_options.get('backtrack', 'bestb')]
+        iocp.pp_teck = {
+            'none': GLPK.GLP_PP_NONE,
+            'root': GLPK.GLP_PP_ROOT,
+            'all': GLPK.GLP_PP_ALL,
+        }[mip_options.get('preprocess', 'all')]
+        iocp.sr_heur = {
+            True: GLPK.GLP_ON,
+            False: GLPK.GLP_OFF,
+        }[mip_options.get('round', True)]
+        iocp.fp_heur = {
+            True: GLPK.GLP_ON,
+            False: GLPK.GLP_OFF,
+        }[mip_options.get('fpump', False)]
+
+        ps_tm_lim = mip_options.get('proxy', 60)
+        if ps_tm_lim:
+            iocp.ps_heur = GLPK.GLP_ON
+            iocp.ps_tm_lim = ps_tm_lim
+        else:
+            iocp.ps_heur = GLPK.GLP_OFF
+            iocp.ps_tm_lim = 0
+
+        cuts = set(list(mip_options.get('cuts', [])))
+        if 'all' in cuts:
+            cuts = {'gomory', 'mir', 'cover', 'clique'}
+        if 'gomory' in cuts:
+            iocp.gmi_cuts = GLPK.GLP_ON
+        if 'mir' in cuts:
+            iocp.mir_cuts = GLPK.GLP_ON
+        if 'cover' in cuts:
+            iocp.cov_cuts = GLPK.GLP_ON
+        if 'clique' in cuts:
+            iocp.clq_cuts = GLPK.GLP_ON
+
+        iocp.mip_gap = mip_options.get('gap_tol', 0.0)
+        iocp.tm_lim = timeout
+        iocp.presolve = {
+            True: GLPK.GLP_ON,
+            False: GLPK.GLP_OFF,
+        }[mip_options.get('presolve', True)]
+        iocp.binarize = {
+            True: GLPK.GLP_ON,
+            False: GLPK.GLP_OFF,
+        }[mip_options.get('binarize', False)]
+
+        # Run the solver
+        ret_code = _lib.glp_intopt(prob, ctypes.byref(iocp))
+        if ret_code != GLPK.SUCCESS:
+            warn('GLPK interior-point not successful!', OptimizeWarning)
+            return OptimizeResult({
+                'message': GLPK.RET_CODES[ret_code],
+            })
+
+        # Figure out what happened
+        status = _lib.glp_mip_status(prob)
+        message = GLPK.STATUS_CODES[status]
+        res = OptimizeResult({
+            'status': status,
+            'message': message,
+            'success': status in [GLPK.GLP_OPT, GLPK.GLP_FEAS],
+        })
+
+        # We can read a solution:
+        if res.success:
+            res.fun = _lib.glp_mip_obj_val(prob)
+            res.x = np.array([_lib.glp_mip_col_val(prob, ii) for ii in range(1, len(c)+1)])
+
 
     else:
         raise ValueError('"%s" is not a recognized solver.' % solver)

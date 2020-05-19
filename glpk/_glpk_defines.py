@@ -278,6 +278,11 @@ class GLPK:
     GLP_PP_ROOT =  1 # preprocessing only on root level
     GLP_PP_ALL = 2   # preprocessing on all levels
 
+    # Variable types
+    GLP_CV = 1 # continuous variable
+    GLP_IV = 2 # integer variable
+    GLP_BV = 3 # binary variable
+
     def __init__(self, libpath):
 
         # Load the shared library;
@@ -459,6 +464,25 @@ class GLPK:
             ctypes.c_int, # dual value of jth col
         ]
 
+        # MIP variants
+        _lib.glp_mip_status.restype = ctypes.c_int
+        _lib.glp_mip_status.argtypes = [ctypes.POINTER(glp_prob)]
+
+        _lib.glp_mip_obj_val.restype = ctypes.c_double
+        _lib.glp_mip_obj_val.argtypes = [ctypes.POINTER(glp_prob)]
+
+        _lib.glp_mip_col_val.restype = ctypes.c_double
+        _lib.glp_mip_col_val.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # jth col
+        ]
+
+        _lib.glp_set_col_kind.restype = None
+        _lib.glp_set_col_kind.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # jth col
+            ctypes.c_int, # type
+        ]
 
         # Initialize control structures
         _lib.glp_init_smcp.restype = ctypes.c_int
@@ -480,6 +504,10 @@ class GLPK:
         # Interior point drivers
         _lib.glp_interior.restype = ctypes.c_int
         _lib.glp_interior.argtypes = [ctypes.POINTER(glp_prob), ctypes.POINTER(glp_iptcp)]
+
+        # MIP drivers
+        _lib.glp_intopt.restype = ctypes.c_int
+        _lib.glp_intopt.argtypes = [ctypes.POINTER(glp_prob), ctypes.POINTER(glp_iocp)]
 
         # Cleanup
         _lib.glp_delete_prob.restype = None
