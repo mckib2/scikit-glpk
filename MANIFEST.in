@@ -1,2 +1,16 @@
-include src/
+recursive-include src/glpk-4.65/*
+exclude src/glpk-4.65/Makefile
+exclude	src/glpk-4.65/config.h
+exclude	src/glpk-4.65/config.log
+exclude	src/glpk-4.65/config.status
+exclude	src/glpk-4.65/examples/.deps/*
+exclude	src/glpk-4.65/examples/.libs/*
+exclude	src/glpk-4.65/examples/Makefile
+exclude	src/glpk-4.65/examples/glpsol
+exclude	src/glpk-4.65/libtool
+exclude	src/glpk-4.65/src/.deps/*
+exclude	src/glpk-4.65/src/.libs/*
+exclude	src/glpk-4.65/src/Makefile
+exclude	src/glpk-4.65/src/libglpk.la
+exclude	src/glpk-4.65/stamp-h1
 include requirements.txt

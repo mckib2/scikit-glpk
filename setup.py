@@ -6,7 +6,7 @@ import platform
 from shutil import copy2
 import subprocess
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 GLPK_VERSION = '4.65'
 GLPK_LIB_NAME = 'libglpk'
 
