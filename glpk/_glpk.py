@@ -2,6 +2,7 @@
 
 import ctypes
 from warnings import warn
+import platform
 
 import numpy as np
 from scipy.sparse import coo_matrix
@@ -26,7 +27,7 @@ def glpk(
         simplex_options=None,
         ip_options=None,
         mip_options=None,
-        libpath='/home/nicholas/Downloads/glpk-4.65/src/.libs/libglpk.so',
+        libpath='libglpk.%s' % ('dll' if platform.system() == 'Windows' else 'so'),
 ):
     '''GLPK ctypes interface.
 
