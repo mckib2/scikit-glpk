@@ -5,6 +5,7 @@ import pathlib
 import platform
 from shutil import copy2
 import subprocess
+import tempfile
 
 VERSION = '0.0.2'
 GLPK_VERSION = '4.65'

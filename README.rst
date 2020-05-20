@@ -3,6 +3,17 @@ sckit-glpk
 
 Proof of concept Python wrappers for GLPK.
 
+Installation
+------------
+
+Clone this repo (pypi installation not working) and run the following command:
+
+.. code-block::
+
+   python setup.py build_ext --inplace
+
+This will install GLPK.
+
 Background
 ----------
 
@@ -36,3 +47,8 @@ Since the underlying API is quite simple and written in C, `ctypes` is a good fi
 GLPK will not be packaged with scipy due to licensing issues, so the strategy will be to specify where the installation is on a user's computer (i.e., path to the shared library).  `linprog` could then presumably route the problem to the GLPK backend instead of HiGHS or the existing native python solvers.
 
 The `ctypes` wrapper is required for integrating GLPK into the Python runtime.  Instead of using MPS files to communicate problems and reading solutions from files, `scipy.sparse.coo_matrix` and `numpy` arrays can be passed directly to the library.  More information can be extracted from GLPK this way as well (For example, there is no way to get iteration count except by reading directly from the underlying structs.  It is only ever printed to stdout, no other way to get it).
+
+Issues
+------
+
+Currently GLPK is being packaged with this library.  PyPI installation is not currently functional while I work out how to get GLPK to build nicely with pip.
