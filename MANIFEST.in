@@ -1,4 +1,4 @@
-recursive-include src/glpk-4.65/*
+recursive-include src/glpk-4.65/ *
 exclude src/glpk-4.65/Makefile
 exclude	src/glpk-4.65/config.h
 exclude	src/glpk-4.65/config.log
