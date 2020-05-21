@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='scikit-glpk',
-    version='0.0.4',
+    version='0.0.5',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
