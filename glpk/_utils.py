@@ -2,13 +2,14 @@
 
 import ctypes
 import pathlib
+import os
 
 import numpy as np
 from scipy.sparse import coo_matrix
 
 from ._glpk_defines import GLPK, glp_prob
 
-def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, libpath=''):
+def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, libpath=None):
     '''Read an MPS file.
 
     Parameters
@@ -23,8 +24,16 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, libpath=''):
         matrices and bounds are returned, i.e., ``A_ub``, ``b_ub``, etc.
         Default is ``False``.
     libpath : str
-        Path to GLPK library (so or dll).
+        Path to GLPK library (so or dll). If ``None``, the path is read
+        from the environment variable ``GLPK_LIB_PATH``.
+        Default is ``None``.
     '''
+
+    # Make sure we can find the library
+    if libpath is None:
+        libpath = os.environ['GLPK_LIB_PATH']
+    if not pathlib.Path(libpath).exists():
+        raise ValueError('Could not find GLPK library.')
 
     _lib = GLPK(libpath)._lib
 
