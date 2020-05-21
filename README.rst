@@ -28,6 +28,8 @@ For Windows you will need Visual Studio Build Tools.  Go to the correct subdirec
 
 To use the GLPK installation, either provide the location of the shared library to the function, i.e. `glpk(..., libpath='path/to/libglpk.so')` or set the environment variable `GLPK_LIB_PATH=path/to/libglpk.so`.  The wrappers have nothing to wrap if they don't know where to find the library.
 
+If you already have `Octave <https://www.gnu.org/software/octave/>`_ installed, note that GLPK is bundled with the installation, so you can find `libglpk.[so|dll]` in the `bin` directory and do not have to install it from source as above.
+
 Background
 ----------
 
