@@ -1,10 +1,10 @@
-'''Install scikit-glpk bindings as well as GLPK library.'''
+'''Install scikit-glpk bindings.'''
 
 from setuptools import find_packages, setup
 
 setup(
     name='scikit-glpk',
-    version='0.0.3',
+    version='0.0.4',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
@@ -14,7 +14,5 @@ setup(
     packages=find_packages(),
     keywords='glpk linprog scikit',
     install_requires=open('requirements.txt').read().split(),
-    setup_requires=['numpy'],
     python_requires='>=3.5',
-    **configuration(top_path='').todict()
 )

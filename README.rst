@@ -12,7 +12,21 @@ Should be an easy pip installation:
 
    pip install scikit-glpk
 
-GLPK must be installed in order to use the wrappers.
+GLPK must be installed in order to use the wrappers. Download the latest version from `here <http://ftp.gnu.org/gnu/glpk/>`_ and following the instructions for installation.  If you use Linux/Mac, you should be able to run the following (see docs for different configuration options):
+
+.. code-block::
+
+   ./configure
+   make -j
+   make install
+
+For Windows you will need Visual Studio Build Tools.  Go to the correct subdirectory (w32 for 32-bit or w64 for 64-bit) and the run the batch script:
+
+.. code-block::
+
+   Build_GLPK_with_VC14_DLL.bat
+
+To use the GLPK installation, either provide the location of the shared library to the function, i.e. `glpk(..., libpath='path/to/libglpk.so')` or set the environment variable `GLPK_LIB_PATH=path/to/libglpk.so`.  The wrappers have nothing to wrap if they don't know where to find the library.
 
 Background
 ----------
