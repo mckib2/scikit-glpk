@@ -19,10 +19,7 @@ class build_ext(_build_ext):
     def get_export_symbols(self, ext):
         '''Only for generating Windows DLL.'''
         def_file = GLPK_SRC_DIR / '../w64/glpk_4_65.def'
-        _symbols = scrape_makefile_list(def_file, 'EXPORTS\n', ';; end of file ;;')
-        print(_symbols)
-        assert False
-        return _symbols
+        return scrape_makefile_list(def_file, 'EXPORTS\n', ';; end of file ;;')
 
 # Get sources for GLPK
 makefile = GLPK_SRC_DIR / 'Makefile.am'
@@ -36,7 +33,7 @@ include_dirs = [str(GLPK_SRC_DIR / _d[len('-I($srcdir)/'):]) for _d in include_d
 
 setup(
     name='scikit-glpk',
-    version='0.1.2',
+    version='0.1.3',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
