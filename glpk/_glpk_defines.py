@@ -1,7 +1,6 @@
 
 import ctypes
-import os
-import pathlib
+import importlib.util
 
 from numpy.ctypeslib import ndpointer
 
@@ -138,6 +137,10 @@ class glp_prob(ctypes.Structure):
     ]
 
 class GLPK:
+
+    # Where is GLPK? Find where the C extension module was installed:
+    _glpk_lib_path = importlib.util.find_spec("glpk4_65").origin
+
 
     INT_MAX = ctypes.c_uint(-1).value // 2
     GLP_ON = 1
@@ -283,15 +286,10 @@ class GLPK:
     GLP_IV = 2 # integer variable
     GLP_BV = 3 # binary variable
 
-    def __init__(self, libpath):
+    def __init__(self):
 
         # Load the shared library;
-        # Windows Octave installs require that we load from
-        # the same directory as libglpk.dll is found
-        cwd = os.getcwd()
-        os.chdir(pathlib.Path(libpath).parent)
-        _lib = ctypes.cdll.LoadLibrary(libpath)
-        os.chdir(cwd)
+        _lib = ctypes.cdll.LoadLibrary(self._glpk_lib_path)
 
         _lib.glp_version.restype = ctypes.c_char_p
 
