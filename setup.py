@@ -1,7 +1,8 @@
 '''Install scikit-glpk bindings.'''
 
-from setuptools import find_packages, setup
-from distutils.core import Extension
+from setuptools import find_packages
+from distutils.core import Extension, setup
+from distutils.command.build_ext import build_ext as _build_ext
 import pathlib
 
 GLPK_SRC_DIR = pathlib.Path('glpk-4.65/src')
@@ -13,6 +14,15 @@ def scrape_makefile_list(filename, START_TOKEN, END_TOKEN):
         eidx = _contents.find(END_TOKEN)
         lines = _contents[sidx+len(START_TOKEN):eidx].splitlines()
         return [str(_l.replace('\\', '').strip()) for _l in lines]
+
+class build_ext(_build_ext):
+    def get_export_symbols(self, ext):
+        '''Only for generating Windows DLL.'''
+        def_file = GLPK_SRC_DIR / '../w64/glpk_4_65.def'
+        _symbols = scrape_makefile_list(def_file, 'EXPORTS\n', ';; end of file ;;')
+        print(_symbols)
+        assert False
+        return _symbols
 
 # Get sources for GLPK
 makefile = GLPK_SRC_DIR / 'Makefile.am'
@@ -26,7 +36,7 @@ include_dirs = [str(GLPK_SRC_DIR / _d[len('-I($srcdir)/'):]) for _d in include_d
 
 setup(
     name='scikit-glpk',
-    version='0.1.1',
+    version='0.1.2',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
@@ -46,4 +56,5 @@ setup(
             language='c',
         )
     ],
+    cmdclass={'build_ext': build_ext},
 )
