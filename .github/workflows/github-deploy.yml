@@ -12,7 +12,7 @@ on: [push, pull_request]
 
 env:
   CIBW_SKIP: cp27-* pp27-* # skip python2.7 builds
-  CIBW_BEFORE_BUILD: pip install .
+  #CIBW_BEFORE_BUILD: pip install .
 
 jobs:
   build_wheels:
@@ -41,6 +41,8 @@ jobs:
 
       - name: Build wheels
         run: |
+          echo $PATH
+          echo $PWD
           python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v2
