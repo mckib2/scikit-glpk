@@ -8,7 +8,7 @@ import pathlib
 GLPK_SRC_DIR = pathlib.Path('glpk-4.65/src')
 
 def scrape_makefile_list(filename, START_TOKEN, END_TOKEN):
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(str(filename), 'r', encoding='utf-8') as f:
         _contents = f.read()
         sidx = _contents.find(START_TOKEN)
         eidx = _contents.find(END_TOKEN)
