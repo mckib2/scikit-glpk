@@ -1,18 +1,17 @@
 name: Build and upload to PyPI
 
 # Build on every branch push, tag push, and pull request change:
-on: [push, pull_request]
+# on: [push, pull_request]
 # Alternatively, to publish when a (published) GitHub Release is created, use the following:
-# on:
+on:
 #   push:
 #   pull_request:
-#   release:
-#     types:
-#       - published
+  release:
+    types:
+      - published
 
 env:
   CIBW_SKIP: cp27-* pp27-* # skip python2.7 builds
-  #CIBW_BEFORE_BUILD: pip install .
 
 jobs:
   build_wheels:
@@ -41,8 +40,6 @@ jobs:
 
       - name: Build wheels
         run: |
-          echo $PATH
-          echo $PWD
           python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v2
