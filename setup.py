@@ -8,7 +8,7 @@ import pathlib
 GLPK_SRC_DIR = pathlib.Path('glpk-4.65/src')
 
 def scrape_makefile_list(filename, START_TOKEN, END_TOKEN):
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(str(filename), 'r', encoding='utf-8') as f:
         _contents = f.read()
         sidx = _contents.find(START_TOKEN)
         eidx = _contents.find(END_TOKEN)
@@ -33,7 +33,7 @@ include_dirs = [str(GLPK_SRC_DIR / _d[len('-I($srcdir)/'):]) for _d in include_d
 
 setup(
     name='scikit-glpk',
-    version='0.1.3',
+    version='0.1.4',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
