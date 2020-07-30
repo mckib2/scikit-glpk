@@ -2,8 +2,6 @@
 
 import ctypes
 from warnings import warn
-import pathlib
-import os
 
 import numpy as np
 from scipy.sparse import coo_matrix
@@ -28,7 +26,6 @@ def glpk(
         simplex_options=None,
         ip_options=None,
         mip_options=None,
-        libpath=None,
 ):
     '''GLPK ctypes interface.
 
@@ -218,18 +215,7 @@ def glpk(
                 add inequality obj <= bound (minimization) or
                 obj >= bound (maximization) to integer feasibility
                 problem (assumes ``minisat=True``).
-
-    libpath : str
-        Path to ``libglpk.so`` for *nix or ``libglpk.dll`` for Windows.
-        If ``None``, the environment variable ``GLPK_LIB_PATH`` is used.
-        Default is ``None``.
     '''
-
-    # Make sure we can find the library
-    if libpath is None:
-        libpath = os.environ['GLPK_LIB_PATH']
-    if not pathlib.Path(libpath).exists():
-        raise ValueError('Could not find GLPK library.')
 
     # Housekeeping
     if bounds is None:
@@ -253,7 +239,7 @@ def glpk(
         mip_options = {}
 
     # Get the library
-    _lib = GLPK(libpath)._lib
+    _lib = GLPK()._lib
 
     # Create problem instance
     prob = _lib.glp_create_prob()

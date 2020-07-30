@@ -12,12 +12,14 @@ Should be an easy pip installation:
 
    pip install scikit-glpk
 
+A Python-compatible C compiler is required to build GLPK from source.
+
 Usage
 -----
 
 There are a few things in this package:
 
-- `glpk()` : the wrappers over the solvers (basically acts like Pythonized `glpsol`)
+- `glpk()` : the wrappers over the solvers (basically acts like Python-friendly `glpsol`)
 - `mpsread()` : convert an MPS file to some matrices
 
 
@@ -46,23 +48,8 @@ Notice that `glpk` is the wrapper and `GLPK` acts as a namespace that holds cons
 GLPK stuffs
 -----------
 
-GLPK must be installed in order to use the wrappers. Download the latest version from `here <http://ftp.gnu.org/gnu/glpk/>`_ and follow the instructions for installation.  If you use Linux/Mac, you should be able to run the following to compile from source (see docs for different configuration options):
+GLPK is installed with the module and a `linprog`-like wrapper is provided with a ctypes backend.  A pared-down version of glpk-4.65 is vendored from `here <http://ftp.gnu.org/gnu/glpk/>`_ and compile instructions are scraped from the makefiles.  I'll try my best to support cross-platform pip installations.
 
-.. code-block::
-
-   ./configure
-   make -j
-   make install
-
-For Windows you will need at least `Visual Studio Build Tools <https://visualstudio.microsoft.com/visual-cpp-build-tools/>`_.  Go to the correct subdirectory (w32 for 32-bit or w64 for 64-bit) and the run the batch script:
-
-.. code-block::
-
-   Build_GLPK_with_VC14_DLL.bat
-
-To use the GLPK installation, either provide the location of the shared library to the function, i.e. `glpk(..., libpath='path/to/libglpk.so')` or set the environment variable `GLPK_LIB_PATH=path/to/libglpk.so`.  The wrappers have nothing to wrap if they don't know where to find the library.
-
-If you already have `Octave <https://www.gnu.org/software/octave/>`_ installed, note that GLPK is bundled with the installation, so you can find `libglpk.[so|dll]` in the `bin` directory and do not have to install it from source as above.
 
 Background
 ----------
@@ -83,7 +70,7 @@ Note that there are several projects that aim for something like this, but which
 - `swiglpk <https://github.com/biosustain/swiglpk>`_ : GPL licensed, low level
 - `optlang <https://github.com/biosustain/optlang>`_ : sympy-like, cool project otherwise
 
-Most existing projects lean to GPL licenses.  Not a bad thing, but would hinder adoption into scipy.
+Most existing projects lean to GPL licenses.  Not a bad thing, but would hinder adoption into scipy (not GLPK itself, but a wrapper to use from within scipy if the user has chosen to install GLPK herself).
 
 Why do we want this?
 --------------------
@@ -95,7 +82,7 @@ Approach
 
 Since the underlying API is quite simple and written in C and only C, `ctypes` is a good fit for this.
 
-GLPK will not be packaged with scipy due to licensing issues, so the strategy will be to specify where the installation is on a user's computer (i.e., path to the shared library).  `linprog` could then presumably route the problem to the GLPK backend instead of HiGHS or the existing native python solvers.
+GLPK is packaged but I may want to make it so the user can optionally specify where the installation is on a user's computer (i.e., path to the shared library) so GLPK is not packaged with `scikit-glpk` and/or scipy.  `linprog` could then presumably route the problem to the GLPK backend instead of HiGHS or the existing native python solvers.
 
 The `ctypes` wrapper is required for integrating GLPK into the Python runtime.  Instead of using MPS files to communicate problems and reading solutions from files, `scipy.sparse.coo_matrix` and `numpy` arrays can be passed directly to the library.  More information can be extracted from GLPK this way as well (For example, there is no way to get iteration count except by reading directly from the underlying structs.  It is only ever printed to stdout, no other way to get it).
 
