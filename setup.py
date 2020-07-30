@@ -33,7 +33,7 @@ include_dirs = [str(GLPK_SRC_DIR / _d[len('-I($srcdir)/'):]) for _d in include_d
 
 setup(
     name='scikit-glpk',
-    version='0.1.3',
+    version='0.1.4',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
