@@ -12,7 +12,8 @@ Should be an easy pip installation:
 
    pip install scikit-glpk
 
-A Python-compatible C compiler is required to build GLPK from source.
+A Python-compatible C compiler is required to build GLPK from source.  By default a precompiled
+wheel is used during compilation, so you don't have to compile if you don't want to.
 
 Usage
 -----
@@ -40,15 +41,13 @@ There's lots of information in the docstrings for these functions, please check 
 
 Notice that `glpk` is the wrapper and `GLPK` acts as a namespace that holds constants.
 
-`bounds` is also behaves a little differently for both of these:
+`bounds` behaves the same as the `scipy.optimize.linprog`  `bounds` argument.  They are converted to GLPK-style bounds first thing.
 
-- as an input to `glpk`, `bounds` is a list of triplets in the style of GLPK (probably should be converted to `linprog` conventions)
-- as an output of `mpsread`, `bounds` is a list of tuples in the style of `linprog`
 
 GLPK stuffs
 -----------
 
-GLPK is installed with the module and a `linprog`-like wrapper is provided with a ctypes backend.  A pared-down version of glpk-4.65 is vendored from `here <http://ftp.gnu.org/gnu/glpk/>`_ and compile instructions are scraped from the makefiles.  I'll try my best to support cross-platform pip installations.
+GLPK is installed with the module and a `linprog`-like wrapper is provided with a ctypes backend.  A pared-down version of glpk-4.65 is vendored from `here <http://ftp.gnu.org/gnu/glpk/>`_ and compile instructions are scraped from the makefiles.  I'll try my best to support cross-platform pip installations.  Wheels are current being built for Linux/Mac/Windows.
 
 
 Background
