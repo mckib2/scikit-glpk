@@ -84,8 +84,3 @@ Since the underlying API is quite simple and written in C and only C, `ctypes` i
 GLPK is packaged but I may want to make it so the user can optionally specify where the installation is on a user's computer (i.e., path to the shared library) so GLPK is not packaged with `scikit-glpk` and/or scipy.  `linprog` could then presumably route the problem to the GLPK backend instead of HiGHS or the existing native python solvers.
 
 The `ctypes` wrapper is required for integrating GLPK into the Python runtime.  Instead of using MPS files to communicate problems and reading solutions from files, `scipy.sparse.coo_matrix` and `numpy` arrays can be passed directly to the library.  More information can be extracted from GLPK this way as well (For example, there is no way to get iteration count except by reading directly from the underlying structs.  It is only ever printed to stdout, no other way to get it).
-
-TODO
-----
-
-- Several GLPK solver options (notably tolerances) not wrapped yet

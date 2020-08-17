@@ -116,13 +116,38 @@ def glpk(
                     - ``norelax`` : standard "textbook" ratio test
                     - ``flip`` : long-step ratio test
 
+            - tol_bnd : double
+                Tolerance used to check if the basic solution is primal
+                feasible. (Default: 1e-7).
+
+            - tol_dj : double
+                Tolerance used to check if the basic solution is dual
+                feasible. (Default: 1e-7).
+
+            - tol_piv : double
+                Tolerance used to choose eligble pivotal elements of
+                the simplex table. (Default: 1e-10).
+
+            - obj_ll : double
+                Lower limit of the objective function. If the objective
+                function reaches this limit and continues decreasing,
+                the solver terminates the search. Used in the dual simplex
+                only. (Default: -DBL_MAX -- the largest finite float64).
+
+            - obj_ul : double
+                Upper limit of the objective function. If the objective
+                function reaches this limit and continues increasing,
+                the solver terminates the search. Used in the dual simplex
+                only. (Default: +DBL_MAX -- the largest finite float64).
+
             - presolve : bool
                 Use presolver (assumes ``scale=True`` and
                 ``init_basis='adv'``. Default is ``True``.
 
             - exact : bool
                 Use simplex method based on exact arithmetic.
-                Default is ``False``.
+                Default is ``False``. If ``True``, all other
+                ``simplex_option`` fields are ignored.
 
     ip_options : dict
         Options specific to interior-pooint solver.
@@ -208,13 +233,31 @@ def glpk(
                     - ``clique`` : clique cuts
                     - ``all`` : generate all cuts above
 
-            - gap_tol : float
-                Relative mip gap tolerance.
-
+            - tol_int : float
+                Absolute tolerance used to check if optimal solution to the
+                current LP relaxation is integer feasible.
+                (Default: 1e-5).
+            - tol_obj : float
+                Relative tolerance used to check if the objective value in
+                optimal solution to the current LP relaxation is not better
+                than in the best known integer feasible solution.
+                (Default: 1e-7).
+            - mip_gap : float
+                Relative mip gap tolerance. If the relative mip gap for
+                currently known best integer feasiblesolution falls below
+                this tolerance, the solver terminates the search. This allows
+                obtaining suboptimal integer feasible solutions if solving the
+                problem to optimality takes too long time.
+                (Default: 0.0).
             - bound : float
                 add inequality obj <= bound (minimization) or
                 obj >= bound (maximization) to integer feasibility
                 problem (assumes ``minisat=True``).
+
+    Notes
+    -----
+    In general, don't change tolerances without a detailed understanding
+    of their purposes.
     '''
 
     # Housekeeping
@@ -375,6 +418,13 @@ def glpk(
             'norelax': GLPK.GLP_RT_STD,
             'flip': GLPK.GLP_RT_FLIP,
         }[simplex_options.get('ratio', 'relax')]
+        smcp.tol_bnd = simplex_options.get('tol_bnd', 1e-7)
+        smcp.tol_dj = simplex_options.get('tol_dj', 1e-7)
+        smcp.tol_piv = simplex_options.get('tol_piv', 1e-10)
+        if simplex_options.get('obj_ll', False):
+            smcp.obj_ll = simplex_options['obj_ll']
+        if simplex_options.get('obj_ul', False):
+            smcp.obj_ul = simplex_options['obj_ul']
         smcp.it_lim = maxit
         smcp.tm_lim = timeout
         smcp.presolve = {
@@ -528,7 +578,9 @@ def glpk(
         if 'clique' in cuts:
             iocp.clq_cuts = GLPK.GLP_ON
 
-        iocp.mip_gap = mip_options.get('gap_tol', 0.0)
+        iocp.tol_int = mip_options.get('tol_int', 1e-5)
+        iocp.tol_obj = mip_options.get('tol_obj', 1e-7)
+        iocp.mip_gap = mip_options.get('mip_gap', 0.0)
         iocp.tm_lim = timeout
         iocp.presolve = {
             True: GLPK.GLP_ON,
