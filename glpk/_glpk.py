@@ -9,6 +9,7 @@ from scipy.optimize import OptimizeWarning, OptimizeResult
 
 from ._glpk_defines import GLPK, glp_smcp, glp_iptcp, glp_bfcp, glp_iocp
 
+
 def glpk(
         c,
         A_ub=None,
@@ -39,15 +40,13 @@ def glpk(
     A_eq : 2-D array (k, n)
         scipy.sparse.coo_matrix
     b_eq : 1-D array (k,)
-    bounds : list (n,) of tuple (3,)
+    bounds : None or list (n,) of tuple (2,) or tuple (2,)
         The jth entry in the list corresponds to the jth objective coefficient.
-        Each entry is made up of a tuple describing the bounds:
-
-            - ``type`` : {GLP_FR, GLP_LO, GLP_UP, GLP_DB, GLP_FX}
-            - ``lb`` : double
-            - ``up`` : double
-
-        If the entry is ``None``, then ``type=GLP_FX`` and ``ub==lb==0``.
+        Each entry is made up of a tuple describing the bounds.
+        Use None to indicate that there is no bound. By default, bounds are
+        (0, None) (all decision variables are non-negative). If a single tuple
+        (min, max) is provided, then min and max will serve as bounds for all
+        decision variables.
     solver : { 'simplex', 'interior', 'mip' }
         Use simplex (LP/MIP) or interior point method (LP only).
         Default is ``simplex``.
@@ -117,13 +116,38 @@ def glpk(
                     - ``norelax`` : standard "textbook" ratio test
                     - ``flip`` : long-step ratio test
 
+            - tol_bnd : double
+                Tolerance used to check if the basic solution is primal
+                feasible. (Default: 1e-7).
+
+            - tol_dj : double
+                Tolerance used to check if the basic solution is dual
+                feasible. (Default: 1e-7).
+
+            - tol_piv : double
+                Tolerance used to choose eligble pivotal elements of
+                the simplex table. (Default: 1e-10).
+
+            - obj_ll : double
+                Lower limit of the objective function. If the objective
+                function reaches this limit and continues decreasing,
+                the solver terminates the search. Used in the dual simplex
+                only. (Default: -DBL_MAX -- the largest finite float64).
+
+            - obj_ul : double
+                Upper limit of the objective function. If the objective
+                function reaches this limit and continues increasing,
+                the solver terminates the search. Used in the dual simplex
+                only. (Default: +DBL_MAX -- the largest finite float64).
+
             - presolve : bool
                 Use presolver (assumes ``scale=True`` and
                 ``init_basis='adv'``. Default is ``True``.
 
             - exact : bool
                 Use simplex method based on exact arithmetic.
-                Default is ``False``.
+                Default is ``False``. If ``True``, all other
+                ``simplex_option`` fields are ignored.
 
     ip_options : dict
         Options specific to interior-pooint solver.
@@ -137,7 +161,8 @@ def glpk(
                     - ``qmd`` : quotient minimum degree ordering
                     - ``amd`` : approximate minimum degree ordering
                     - ``symamd`` : approximate minimum degree ordering
-                        algorithm for Cholesky factorization of symmetric matrices.
+                        algorithm for Cholesky factorization of symmetric
+                        matrices.
 
     mip_options : dict
         Options specific to MIP solver.
@@ -163,8 +188,8 @@ def glpk(
                     - ``last`` : branch on last integer variable
                     - ``mostf`` : branch on most fractional variable
                     - ``drtom`` : branch using heuristic by Driebeck and Tomlin
-                    - ``pcost`` : branch using hybrid pseudocost heuristic (may be
-                        useful for hard instances)
+                    - ``pcost`` : branch using hybrid pseudocost heuristic
+                                  (may be useful for hard instances)
 
             - backtrack : { 'dfs', 'bfs', 'bestp', 'bestb' }
                 Backtracking rule. Default is ``bestb``.
@@ -208,19 +233,40 @@ def glpk(
                     - ``clique`` : clique cuts
                     - ``all`` : generate all cuts above
 
-            - gap_tol : float
-                Relative mip gap tolerance.
-
+            - tol_int : float
+                Absolute tolerance used to check if optimal solution to the
+                current LP relaxation is integer feasible.
+                (Default: 1e-5).
+            - tol_obj : float
+                Relative tolerance used to check if the objective value in
+                optimal solution to the current LP relaxation is not better
+                than in the best known integer feasible solution.
+                (Default: 1e-7).
+            - mip_gap : float
+                Relative mip gap tolerance. If the relative mip gap for
+                currently known best integer feasiblesolution falls below
+                this tolerance, the solver terminates the search. This allows
+                obtaining suboptimal integer feasible solutions if solving the
+                problem to optimality takes too long time.
+                (Default: 0.0).
             - bound : float
                 add inequality obj <= bound (minimization) or
                 obj >= bound (maximization) to integer feasibility
                 problem (assumes ``minisat=True``).
+
+    Notes
+    -----
+    In general, don't change tolerances without a detailed understanding
+    of their purposes.
     '''
 
     # Housekeeping
+    c = np.array(c).flatten()
     if bounds is None:
         # Default bound is [0, inf)
-        bounds = [(GLPK.GLP_LO, 0, 0)]*len(c)
+        bounds = [(0, None)]*len(c)
+    elif np.array(bounds).size == 2:
+        bounds = [(bounds[0], bounds[1])]*len(c)
     if A_ub is None:
         # we need numpy arrays
         A_ub = np.empty((0, len(c)))
@@ -237,6 +283,38 @@ def glpk(
         ip_options = {}
     if mip_options is None:
         mip_options = {}
+
+    # Make sure input is good
+    assert len(A_ub) == len(b_ub), 'A_ub, b_ub must have same number of rows!'
+    assert len(A_eq) == len(b_eq), 'A_eq, b_eq must have same number of rows!'
+    if A_ub:
+        assert len(A_ub[0]) == len(c), 'A_ub must have as many columns as c!'
+    if A_eq:
+        assert len(A_eq[0]) == len(c), 'A_eq must have as many columns as c!'
+
+    # coo for (i, j, val) format
+    A = coo_matrix(np.concatenate((A_ub, A_eq), axis=0))
+
+    assert len(bounds) == len(c), 'Must have as many bounds as coefficients!'
+    assert all(len(bnd) == 2 for bnd in bounds)
+
+    # Convert linprog-style bounds to GLPK-style bounds
+    for ii, (lb, ub) in enumerate(bounds):
+        if lb in {-np.inf, None} and ub in {np.inf, None}:
+            # -inf < x < inf
+            bounds[ii] = (GLPK.GLP_FR, 0, 0)
+        elif lb in {-np.inf, None}:
+            # -inf < x <= ub
+            bounds[ii] = (GLPK.GLP_UP, 0, ub)
+        elif ub in {np.inf, None}:
+            # lb <= x < inf
+            bounds[ii] = (GLPK.GLP_LO, lb, 0)
+        elif ub < lb:
+            # lb <= x <= ub
+            bounds[ii] = (GLPK.GLP_DB, lb, ub)
+        else:
+            # lb == x == up
+            bounds[ii] = (GLPK.GLP_FX, lb, ub)
 
     # Get the library
     _lib = GLPK()._lib
@@ -264,8 +342,6 @@ def glpk(
         # else: default is GLP_FX with lb=0, ub=0
 
     # Need to load both matrices at the same time
-    A = coo_matrix(np.concatenate((A_ub, A_eq), axis=0)) # coo for (i, j, val) format
-    b = np.concatenate((b_ub, b_eq))
     first_row = _lib.glp_add_rows(prob, A.shape[0])
 
     # prepend an element and make 1-based index
@@ -342,6 +418,13 @@ def glpk(
             'norelax': GLPK.GLP_RT_STD,
             'flip': GLPK.GLP_RT_FLIP,
         }[simplex_options.get('ratio', 'relax')]
+        smcp.tol_bnd = simplex_options.get('tol_bnd', 1e-7)
+        smcp.tol_dj = simplex_options.get('tol_dj', 1e-7)
+        smcp.tol_piv = simplex_options.get('tol_piv', 1e-10)
+        if simplex_options.get('obj_ll', False):
+            smcp.obj_ll = simplex_options['obj_ll']
+        if simplex_options.get('obj_ul', False):
+            smcp.obj_ul = simplex_options['obj_ul']
         smcp.it_lim = maxit
         smcp.tm_lim = timeout
         smcp.presolve = {
@@ -376,8 +459,8 @@ def glpk(
             res.x = np.array([_lib.glp_get_col_prim(prob, ii) for ii in range(1, len(c)+1)])
             res.dual = np.array([_lib.glp_get_col_dual(prob, ii) for ii in range(1, len(b_ub)+1)])
 
-            # We don't get slack without doing sensitivity analysis since GLPK uses
-            # auxiliary variables instead of slack!
+            # We don't get slack without doing sensitivity analysis since GLPK
+            # uses auxiliary variables instead of slack!
             res.slack = b_ub - A_ub @ res.x
             res.con = b_eq - A_eq @ res.x
 
@@ -495,7 +578,9 @@ def glpk(
         if 'clique' in cuts:
             iocp.clq_cuts = GLPK.GLP_ON
 
-        iocp.mip_gap = mip_options.get('gap_tol', 0.0)
+        iocp.tol_int = mip_options.get('tol_int', 1e-5)
+        iocp.tol_obj = mip_options.get('tol_obj', 1e-7)
+        iocp.mip_gap = mip_options.get('mip_gap', 0.0)
         iocp.tm_lim = timeout
         iocp.presolve = {
             True: GLPK.GLP_ON,
@@ -528,7 +613,6 @@ def glpk(
             res.fun = _lib.glp_mip_obj_val(prob)
             res.x = np.array([_lib.glp_mip_col_val(prob, ii) for ii in range(1, len(c)+1)])
 
-
     else:
         raise ValueError('"%s" is not a recognized solver.' % solver)
 
@@ -536,11 +620,12 @@ def glpk(
     _lib.glp_delete_prob(prob)
 
     # Map status codes to scipy:
-    #res.status = {
-    #    GLPK.GLP_OPT: 0,
-    #}[res.status]
+    # res.status = {
+    #     GLPK.GLP_OPT: 0,
+    # }[res.status]
 
     return res
+
 
 if __name__ == '__main__':
     pass
