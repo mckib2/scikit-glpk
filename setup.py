@@ -1,9 +1,9 @@
 '''Install scikit-glpk bindings.'''
 
 import pathlib
+from setuptools import find_packages
 from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext as _build_ext
-from setuptools import find_packages
 
 GLPK_SRC_DIR = pathlib.Path('glpk-4.65/src')
 
@@ -41,7 +41,7 @@ include_dirs = [
 
 setup(
     name='scikit-glpk',
-    version='0.2.1',
+    version='0.2.2',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
