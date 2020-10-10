@@ -13,7 +13,8 @@ Should be an easy pip installation:
    pip install scikit-glpk
 
 A Python-compatible C compiler is required to build GLPK from source.  By default a precompiled
-wheel is used during compilation, so you don't have to compile if you don't want to.
+wheel is used during pip installation, so you don't have to compile if you don't want to.
+Wheels are available for Linux, Mac, and Windows for supported versions of Python.
 
 Usage
 -----
@@ -68,8 +69,6 @@ Note that there are several projects that aim for something like this, but which
 - `ecyglpki <https://github.com/equaeghe/ecyglpki/tree/0.1.0>`_ : GPL licensed, dead?
 - `swiglpk <https://github.com/biosustain/swiglpk>`_ : GPL licensed, low level
 - `optlang <https://github.com/biosustain/optlang>`_ : sympy-like, cool project otherwise
-
-Most existing projects lean to GPL licenses.  Not a bad thing, but would hinder adoption into scipy (not GLPK itself, but a wrapper to use from within scipy if the user has chosen to install GLPK herself).
 
 Why do we want this?
 --------------------
