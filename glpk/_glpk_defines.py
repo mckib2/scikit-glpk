@@ -528,6 +528,13 @@ class GLPK:
             ctypes.c_char_p,           # filename
         ]
 
+        _lib.glp_write_lp.restype = ctypes.c_int
+        _lib.glp_write_lp.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.POINTER(glp_mpscp), # should be NULL
+            ctypes.c_char_p,           # filename
+        ]
+        
         # LP Basis Factorization
         _lib.glp_get_bfcp.restype = None
         _lib.glp_get_bfcp.argtypes = [ctypes.POINTER(glp_prob), ctypes.POINTER(glp_bfcp)]

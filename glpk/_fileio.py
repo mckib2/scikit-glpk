@@ -134,4 +134,26 @@ def mpswrite(
     _lib = GLPK()._lib
 
     # Call write
-    _lib.glp_write_mps(prob, fmt, None, str(filename).encode())
+    res = _lib.glp_write_mps(prob, fmt, None, str(filename).encode())
+    return res == 0
+
+
+def lpwrite(c,
+        A_ub=None,
+        b_ub=None,
+        A_eq=None,
+        b_eq=None,
+        bounds=None,
+        sense=GLPK.GLP_MIN,
+        filename='prob.lp'):
+    '''Write a CPLEX LP file.'''
+
+    filename = pathlib.Path(filename)
+    prob, _lp = _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, filename.stem)
+
+    # Get the library
+    _lib = GLPK()._lib
+
+    # Call write
+    res = _lib.glp_write_lp(prob, None, str(filename).encode())
+    return res == 0
