@@ -6,8 +6,10 @@ from warnings import warn
 import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.optimize import OptimizeWarning, OptimizeResult
+from scipy.optimize._linprog_util import _LPProblem, _clean_inputs
 
 from ._glpk_defines import GLPK, glp_smcp, glp_iptcp, glp_bfcp, glp_iocp
+from ._utils import _fill_prob
 
 
 def glpk(
@@ -261,22 +263,6 @@ def glpk(
     '''
 
     # Housekeeping
-    c = np.array(c).flatten()
-    if bounds is None:
-        # Default bound is [0, inf)
-        bounds = [(0, None)]*len(c)
-    elif np.array(bounds).size == 2:
-        bounds = [(bounds[0], bounds[1])]*len(c)
-    if A_ub is None:
-        # we need numpy arrays
-        A_ub = np.empty((0, len(c)))
-    if b_ub is None:
-        # just need something iterable
-        b_ub = []
-    if A_eq is None:
-        A_eq = np.empty((0, len(c)))
-    if b_eq is None:
-        b_eq = []
     if simplex_options is None:
         simplex_options = {}
     if ip_options is None:
@@ -284,88 +270,12 @@ def glpk(
     if mip_options is None:
         mip_options = {}
 
-    # Make sure input is good
-    assert len(A_ub) == len(b_ub), 'A_ub, b_ub must have same number of rows!'
-    assert len(A_eq) == len(b_eq), 'A_eq, b_eq must have same number of rows!'
-    if A_ub:
-        assert len(A_ub[0]) == len(c), 'A_ub must have as many columns as c!'
-    if A_eq:
-        assert len(A_eq[0]) == len(c), 'A_eq must have as many columns as c!'
-
-    # coo for (i, j, val) format
-    A = coo_matrix(np.concatenate((A_ub, A_eq), axis=0))
-
-    assert len(bounds) == len(c), 'Must have as many bounds as coefficients!'
-    assert all(len(bnd) == 2 for bnd in bounds)
-
-    # Convert linprog-style bounds to GLPK-style bounds
-    for ii, (lb, ub) in enumerate(bounds):
-        if lb in {-np.inf, None} and ub in {np.inf, None}:
-            # -inf < x < inf
-            bounds[ii] = (GLPK.GLP_FR, 0, 0)
-        elif lb in {-np.inf, None}:
-            # -inf < x <= ub
-            bounds[ii] = (GLPK.GLP_UP, 0, ub)
-        elif ub in {np.inf, None}:
-            # lb <= x < inf
-            bounds[ii] = (GLPK.GLP_LO, lb, 0)
-        elif ub < lb:
-            # lb <= x <= ub
-            bounds[ii] = (GLPK.GLP_DB, lb, ub)
-        else:
-            # lb == x == up
-            bounds[ii] = (GLPK.GLP_FX, lb, ub)
+    # Create and fill the GLPK problem struct
+    prob, lp = _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, 'problem-name')
+    c, A_ub, b_ub, A_eq, b_eq, bounds, _x0 = lp
 
     # Get the library
     _lib = GLPK()._lib
-
-    # Create problem instance
-    prob = _lib.glp_create_prob()
-
-    # Give problem a name
-    _lib.glp_set_prob_name(prob, b'problem-name')
-
-    # Set objective name
-    _lib.glp_set_obj_name(prob, b'obj-name')
-
-    # Set objective sense
-    _lib.glp_set_obj_dir(prob, sense)
-
-    # Set objective coefficients and column bounds
-    first_col = _lib.glp_add_cols(prob, len(c))
-    for ii, (c0, bnd) in enumerate(zip(c, bounds)):
-        _lib.glp_set_obj_coef(prob, ii + first_col, c0)
-        _lib.glp_set_col_name(prob, ii + first_col, b'c%d' % ii) # name is c[idx], idx is 0-based index
-
-        if bnd is not None:
-            _lib.glp_set_col_bnds(prob, ii + first_col, bnd[0], bnd[1], bnd[2])
-        # else: default is GLP_FX with lb=0, ub=0
-
-    # Need to load both matrices at the same time
-    first_row = _lib.glp_add_rows(prob, A.shape[0])
-
-    # prepend an element and make 1-based index
-    # b/c GLPK expects indices starting at 1
-    nnz = A.nnz
-    rows = np.concatenate(([-1], A.row + first_row)).astype(ctypes.c_int)
-    cols = np.concatenate(([-1], A.col + first_col)).astype(ctypes.c_int)
-    values = np.concatenate(([0], A.data)).astype(ctypes.c_double)
-    _lib.glp_load_matrix(
-        prob,
-        nnz,
-        rows,
-        cols,
-        values,
-    )
-
-    # Set row bounds
-    # Upper bounds (b_ub):
-    for ii, b0 in enumerate(b_ub):
-        # lb is ignored for upper bounds
-        _lib.glp_set_row_bnds(prob, ii + first_row, GLPK.GLP_UP, 0, b0)
-    # Equalities (b_eq)
-    for ii, b0 in enumerate(b_eq):
-        _lib.glp_set_row_bnds(prob, ii + first_row + len(b_ub), GLPK.GLP_FX, b0, b0)
 
     # Scale the problem
     _lib.glp_scale_prob(prob, GLPK.GLP_SF_AUTO) # do auto scaling for now
