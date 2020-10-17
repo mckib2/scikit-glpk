@@ -23,8 +23,8 @@ There are a few things in this package:
 
 - `glpk()` : the wrappers over the solvers (basically acts like Python-friendly `glpsol`)
 - `mpsread()` : convert an MPS file to some matrices
-
-
+- `mpswrite()` : convert matrices to MPS file
+- `lpwrite()` : convert matrices to CPLEX LP file
 
 .. code-block::
 
@@ -33,10 +33,16 @@ There are a few things in this package:
    res = glpk(
        c, A_ub, b_ub, A_eq, b_eq, bounds, solver, sense, maxit, timeout,
        basis_fac, message_level, disp, simplex_options, ip_options,
-       mip_options, libpath)
+       mip_options)
+
+   from glpk import mpsread, mpswrite, lpwrite
 
    c, A_ub, b_ub, A_eq, b_eq, bounds = mpsread(
-       filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, libpath=None)
+       filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False)
+
+   success = mpswrite(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, filename, fmt)
+
+   success = lpwrite(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, filename)
 
 There's lots of information in the docstrings for these functions, please check there for a complete listing and explanation.
 
@@ -73,7 +79,7 @@ Note that there are several projects that aim for something like this, but which
 Why do we want this?
 --------------------
 
-GLPK has a lot of options that the current scipy solvers lack as well as robust MIP support (only basic in HiGHS).  It is also a standard, well known solver in the optimization community.  The only thing that I want that it lacks on an API level is robust support for column generation.  Easy access to GLPK as a backend to `linprog` would be very welcome (to me at least).
+GLPK has a lot of options that the current scipy solvers lack as well as robust MIP support (only basic in HiGHS).  It is also a standard, well known solver in the optimization community.  The only thing that I want that it lacks on an API level is robust support for column generation.  Easy access to GLPK as a backend to `linprog` would be very welcome (to me at least).  I also find access to a linprog LP description (c, A_ub, etc.) to MPS/LP file format convienent for interacting with other solvers such as `HiGHS <https://github.com/ERGO-Code/HiGHS>`_.
 
 Approach
 --------
