@@ -1,129 +1,97 @@
 '''Wrappers over utility API routines.'''
 
 import ctypes
-import pathlib
-import os
 
 import numpy as np
 from scipy.sparse import coo_matrix
+from scipy.optimize._linprog_util import _LPProblem, _clean_inputs
 
 from ._glpk_defines import GLPK, glp_prob
 
-def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, libpath=None):
-    '''Read an MPS file.
 
-    Parameters
-    ----------
-    filename : str
-        Path to MPS file.
-    fmt : { GLP_MPS_DECK, GLP_MPS_FILE }
-        Type of MPS file (original or free-format). Default is
-        free-format (``GLP_MPS_FILE``).
-    ret_glp_prob : bool
-        Return the ``glp_prob`` structure. If ``False``, `linprog` style
-        matrices and bounds are returned, i.e., ``A_ub``, ``b_ub``, etc.
-        Default is ``False``.
-    libpath : str
-        Path to GLPK library (so or dll). If ``None``, the path is read
-        from the environment variable ``GLPK_LIB_PATH``.
-        Default is ``None``.
-    '''
+def _convert_bounds(processed_bounds):
+    bounds = [None]*len(processed_bounds)
+    for ii, (lb, ub) in enumerate(processed_bounds):
+        if lb in {-np.inf, None} and ub in {np.inf, None}:
+            # -inf < x < inf
+            bounds[ii] = (GLPK.GLP_FR, 0, 0)
+        elif lb in {-np.inf, None}:
+            # -inf < x <= ub
+            bounds[ii] = (GLPK.GLP_UP, 0, ub)
+        elif ub in {np.inf, None}:
+            # lb <= x < inf
+            bounds[ii] = (GLPK.GLP_LO, lb, 0)
+        elif ub < lb:
+            # lb <= x <= ub
+            bounds[ii] = (GLPK.GLP_DB, lb, ub)
+        else:
+            # lb == x == up
+            bounds[ii] = (GLPK.GLP_FX, lb, ub)
+    return bounds
 
-    # Make sure we can find the library
-    if libpath is None:
-        libpath = os.environ['GLPK_LIB_PATH']
-    if not pathlib.Path(libpath).exists():
-        raise ValueError('Could not find GLPK library.')
 
-    _lib = GLPK(libpath)._lib
+def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, prob_name):
+    '''Create and populate GLPK prob struct from linprog definition.'''
 
-    # Populate a glp_prob structure
+    # Housekeeping
+    lp = _clean_inputs(_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, None))
+    c, A_ub, b_ub, A_eq, b_eq, processed_bounds, _x0 = lp
+
+    # coo for (i, j, val) format
+    A = coo_matrix(np.concatenate((A_ub, A_eq), axis=0))
+
+    # Convert linprog-style bounds to GLPK-style bounds
+    bounds = _convert_bounds(processed_bounds)
+
+    # Get the library
+    _lib = GLPK()._lib
+
+    # Create problem instance
     prob = _lib.glp_create_prob()
-    filename = str(pathlib.Path(filename).expanduser().resolve())
-    _lib.glp_read_mps(prob, fmt, None, filename.encode())
 
-    # Return the GLPK object if requested
-    if ret_glp_prob:
-        return prob
+    # Give problem a name
+    _lib.glp_set_prob_name(prob, prob_name.encode())
 
-    # Otherwise read the matrices
-    n = _lib.glp_get_num_cols(prob)
-    c = np.empty((n,))
-    bounds = []
-    for ii in range(1, n+1):
-        c[ii-1] = _lib.glp_get_obj_coef(prob, ii)
+    # Set objective name
+    _lib.glp_set_obj_name(prob, b'obj-name')
 
-        # get lb and ub; have to do it like this for some reason...
-        tipe = _lib.glp_get_col_type(prob, ii)
-        if tipe == GLPK.GLP_FR:
-            bnd = (-np.inf, np.inf)
-        elif tipe == GLPK.GLP_LO:
-            bnd = (_lib.glp_get_col_lb(prob, ii), np.inf)
-        elif tipe == GLPK.GLP_UP:
-            bnd = (-np.inf, _lib.glp_get_col_ub(prob, ii))
-        elif tipe == GLPK.GLP_DB:
-            bnd = (_lib.glp_get_col_lb(prob, ii), _lib.glp_get_col_ub(prob, ii))
-        else:
-            bnd = (_lib.glp_get_col_lb(prob, ii), _lib.glp_get_col_lb(prob, ii))
-        bounds.append(bnd)
+    # Set objective sense
+    _lib.glp_set_obj_dir(prob, sense)
 
-    m = _lib.glp_get_num_rows(prob)
-    nnz = _lib.glp_get_num_nz(prob)
-    ub_cols, ub_rows, ub_vals = [], [], []
-    eq_cols, eq_rows, eq_vals = [], [], []
-    b_ub, b_eq = [], []
-    indarr = ctypes.c_int*(n+1)
-    valarr = ctypes.c_double*(n+1)
-    col_ind = indarr()
-    row_val = valarr()
-    for ii in range(1, m+1):
-        row_type = _lib.glp_get_row_type(prob, ii)
-        l = _lib.glp_get_mat_row(prob, ii, col_ind, row_val)
-        if l == 0:
-            # if there are no elements in the row, skip,
-            # otherwise we would add an extra element to RHS
-            continue
+    # Set objective coefficients and column bounds
+    first_col = _lib.glp_add_cols(prob, len(c))
+    for ii, (c0, bnd) in enumerate(zip(c, bounds)):
+        _lib.glp_set_obj_coef(prob, ii + first_col, c0)
+        _lib.glp_set_col_name(prob, ii + first_col, b'c%d' % ii) # name is c[idx], idx is 0-based index
 
-        if row_type == GLPK.GLP_UP:
-            b_ub.append(_lib.glp_get_row_ub(prob, ii))
-            for jj in range(1, l+1):
-                ub_cols.append(col_ind[jj] - 1)
-                ub_rows.append(ii - 1)
-                ub_vals.append(row_val[jj])
-        elif row_type == GLPK.GLP_FX:
-            b_eq.append(_lib.glp_get_row_lb(prob, ii))
-            for jj in range(1, l+1):
-                eq_cols.append(col_ind[jj] - 1)
-                eq_rows.append(ii - 1)
-                eq_vals.append(row_val[jj])
-        elif row_type == GLPK.GLP_LO:
-            b_ub.append(-1*_lib.glp_get_row_lb(prob, ii))
-            for jj in range(1, l+1):
-                ub_cols.append(col_ind[jj] - 1)
-                ub_rows.append(ii - 1)
-                ub_vals.append(-1*row_val[jj])
-        else:
-            raise NotImplementedError()
+        if bnd is not None:
+            _lib.glp_set_col_bnds(prob, ii + first_col, bnd[0], bnd[1], bnd[2])
+        # else: default is GLP_FX with lb=0, ub=0
 
-    if ub_vals:
-        # Converting to csc_matrix gets rid of all-zero rows
-        A_ub = coo_matrix((ub_vals, (ub_rows, ub_cols)), shape=(max(ub_rows)+1, n))
-        A_ub = A_ub.tocsc()
-        A_ub = A_ub[A_ub.getnnz(axis=1) > 0]
-    else:
-        A_ub = None
-        b_ub = None
+    # Need to load both matrices at the same time
+    first_row = _lib.glp_add_rows(prob, A.shape[0])
 
-    if eq_vals:
-        A_eq = coo_matrix((eq_vals, (eq_rows, eq_cols)), shape=(max(eq_rows)+1, n))
-        A_eq = A_eq.tocsc()
-        A_eq = A_eq[A_eq.getnnz(axis=1) > 0]
-    else:
-        A_eq = None
-        b_eq = None
+    # prepend an element and make 1-based index
+    # b/c GLPK expects indices starting at 1
+    nnz = A.nnz
+    rows = np.concatenate(([-1], A.row + first_row)).astype(ctypes.c_int)
+    cols = np.concatenate(([-1], A.col + first_col)).astype(ctypes.c_int)
+    values = np.concatenate(([0], A.data)).astype(ctypes.c_double)
+    _lib.glp_load_matrix(
+        prob,
+        nnz,
+        rows,
+        cols,
+        values,
+    )
 
-    return(c, A_ub, b_ub, A_eq, b_eq, bounds)
+    # Set row bounds
+    # Upper bounds (b_ub):
+    for ii, b0 in enumerate(b_ub):
+        # lb is ignored for upper bounds
+        _lib.glp_set_row_bnds(prob, ii + first_row, GLPK.GLP_UP, 0, b0)
+    # Equalities (b_eq)
+    for ii, b0 in enumerate(b_eq):
+        _lib.glp_set_row_bnds(prob, ii + first_row + len(b_ub), GLPK.GLP_FX, b0, b0)
 
-def mpswrite(filename, fmt=GLPK.GLP_MPS_FILE, libpath=''):
-    '''Write an MPS file.'''
-    raise NotImplementedError()
+    return prob, lp
