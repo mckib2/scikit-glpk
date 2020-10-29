@@ -21,7 +21,7 @@ def _convert_bounds(processed_bounds):
         elif ub in {np.inf, None}:
             # lb <= x < inf
             bounds[ii] = (GLPK.GLP_LO, lb, 0)
-        elif ub < lb:
+        elif lb < ub:
             # lb <= x <= ub
             bounds[ii] = (GLPK.GLP_DB, lb, ub)
         else:
