@@ -21,6 +21,7 @@ def glpk(
         bounds=None,
         solver='simplex',
         sense=GLPK.GLP_MIN,
+        scale=True,
         maxit=GLPK.INT_MAX,
         timeout=GLPK.INT_MAX,
         basis_fac='luf+ft',
@@ -278,7 +279,11 @@ def glpk(
     _lib = GLPK()._lib
 
     # Scale the problem
-    _lib.glp_scale_prob(prob, GLPK.GLP_SF_AUTO) # do auto scaling for now
+    no_need_explict_scale = (solver == "simplex" and 
+                             simplex_options.get("presolve"))
+    if not no_need_explict_scale and scale:
+        _lib.glp_scale_prob(prob, GLPK.GLP_SF_AUTO) # do auto scaling for now
+
 
     # Select basis factorization method
     bfcp = glp_bfcp()
@@ -340,7 +345,7 @@ def glpk(
         smcp.presolve = {
             True: GLPK.GLP_ON,
             False: GLPK.GLP_OFF,
-        }[simplex_options.get('presolve', GLPK.GLP_OFF)]
+        }[simplex_options.get('presolve', True)]
 
         # Simplex driver
         if simplex_options.get('exact', False):
