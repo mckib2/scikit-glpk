@@ -443,6 +443,12 @@ class GLPK:
             ctypes.c_int, # dual value of jth col
         ]
 
+        _lib.glp_get_row_dual.restype = ctypes.c_double
+        _lib.glp_get_row_dual.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int, # dual value of ith row
+        ]
+        
         # Interior point variants
         _lib.glp_ipt_status.restype = ctypes.c_int
         _lib.glp_ipt_status.argtypes = [ctypes.POINTER(glp_prob)]
