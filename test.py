@@ -21,13 +21,13 @@ if __name__ == '__main__':
         message_level=GLPK.GLP_MSG_OFF,
         maxit=100,
         timeout=10,
-        solver='mip',
+        solver='simplex',
         basis_fac='btf+cbg',
         simplex_options={
             'init_basis': 'adv',
             'method': 'dual',
             'presolve': True,
-            'exact': True,
+            # 'exact': True,
         })
     print('GLPK:')
     print(res)
