@@ -419,7 +419,7 @@ def glpk(
 
             res.fun = _lib.glp_ipt_obj_val(prob)
             res.x = np.array([_lib.glp_ipt_col_prim(prob, ii) for ii in range(1, _lib.glp_get_num_cols(prob)+1)])
-            res.dual = np.array([_lib.glp_ipt_row_dual(prob, ii) for ii in range(1, _lib.gpl_get_num_rows(prob)+1)])
+            res.dual = np.array([_lib.glp_ipt_row_dual(prob, ii) for ii in range(1, _lib.glp_get_num_rows(prob)+1)])
 
             # We don't get slack without doing sensitivity analysis since GLPK uses
             # auxiliary variables instead of slack!
