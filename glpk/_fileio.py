@@ -9,7 +9,7 @@ from ._glpk_defines import GLPK
 from ._utils import _fill_prob
 
 
-def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False):
+def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_names=False):
     '''Read an MPS file.
 
     Parameters
@@ -22,6 +22,11 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False):
     ret_glp_prob : bool
         Return the ``glp_prob`` structure. If ``False``, `linprog` style
         matrices and bounds are returned, i.e., ``A_ub``, ``b_ub``, etc.
+        Default is ``False``.
+    read_names : bool
+        Return names of columns and rows from MPS file. If ``True``
+        names are returned. Used only if ret_glp_prob parameter is
+        ``False``
         Default is ``False``.
     '''
 
@@ -112,7 +117,13 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False):
         A_eq = None
         b_eq = None
 
-    return(c, A_ub, b_ub, A_eq, b_eq, bounds)
+    if read_names:
+        col_names = [_lib.glp_get_col_name(prob, ii).decode('utf-8') for ii in range(1, n + 1)]
+        row_names = [_lib.glp_get_row_name(prob, ii).decode('utf-8') for ii in range(1, m + 1)]
+
+        return (c, A_ub, b_ub, A_eq, b_eq, bounds, col_names, row_names)
+    else:
+        return(c, A_ub, b_ub, A_eq, b_eq, bounds)
 
 
 def mpswrite(
