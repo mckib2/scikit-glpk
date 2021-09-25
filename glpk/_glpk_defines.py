@@ -375,6 +375,9 @@ class GLPK:
         _lib.glp_get_col_name.restype = ctypes.c_char_p
         _lib.glp_get_col_name.argtypes = [ctypes.POINTER(glp_prob), ctypes.c_int]
 
+        _lib.glp_get_row_name.restype = ctypes.c_char_p
+        _lib.glp_get_row_name.argtypes = [ctypes.POINTER(glp_prob), ctypes.c_int]
+
         _lib.glp_get_num_rows.restype = ctypes.c_int
         _lib.glp_get_num_rows.argtypes = [ctypes.POINTER(glp_prob)]
 
