@@ -9,7 +9,7 @@ from ._glpk_defines import GLPK
 from ._utils import _fill_prob
 
 
-def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_names=False):
+def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_additional_info=False):
     '''Read an MPS file.
 
     Parameters
@@ -23,10 +23,17 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_names=Fals
         Return the ``glp_prob`` structure. If ``False``, `linprog` style
         matrices and bounds are returned, i.e., ``A_ub``, ``b_ub``, etc.
         Default is ``False``.
-    read_names : bool
-        Return names of columns and rows from MPS file. If ``True``
-        names are returned. Used only if ret_glp_prob parameter is
-        ``False``
+    read_additional_info : bool
+        Return additional info dictionary, which contains:
+            col_names - column names
+            row_names - row names
+            row_types - row types (GLP_FR, GLP_LO, GLP_UP, GLP_DB, GLP_FX)
+            col_types - column types (GLP_FR, GLP_LO, GLP_UP, GLP_DB, GLP_FX)
+            prob_name - problem name
+            obj_name  - objective function name
+            obj_dir   - optimization direction flag (GLP_MIN, GLP_MAX)
+        All types constants (e.g. GLP_FR, GLP_MIN)  are contained in GLPK.{constant name}
+        If ``True``, additional info is returned.
         Default is ``False``.
     '''
 
@@ -117,11 +124,15 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_names=Fals
         A_eq = None
         b_eq = None
 
-    if read_names:
-        col_names = [_lib.glp_get_col_name(prob, ii).decode('utf-8') for ii in range(1, n + 1)]
-        row_names = [_lib.glp_get_row_name(prob, ii).decode('utf-8') for ii in range(1, m + 1)]
+    if read_additional_info:
+        additional_info = {'col_names': [_lib.glp_get_col_name(prob, ii).decode('utf-8') for ii in range(1, n + 1)],
+                           'row_names': [_lib.glp_get_row_name(prob, ii).decode('utf-8') for ii in range(1, m + 1)],
+                           'col_types': [_lib.glp_get_col_type(prob, ii) for ii in range(1, n + 1)],
+                           'row_types': [_lib.glp_get_row_type(prob, ii) for ii in range(1, m + 1)],
+                           'prob_name': _lib.glp_get_prob_name(prob), 'obj_name': _lib.glp_get_obj_name(prob),
+                           'obj_dir': _lib.glp_get_obj_dir(prob)}
 
-        return (c, A_ub, b_ub, A_eq, b_eq, bounds, col_names, row_names)
+        return (c, A_ub, b_ub, A_eq, b_eq, bounds, additional_info)
     else:
         return(c, A_ub, b_ub, A_eq, b_eq, bounds)
 
