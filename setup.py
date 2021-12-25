@@ -19,7 +19,7 @@ def scrape_makefile_list(filename, START_TOKEN, END_TOKEN):
 
 
 class build_ext(_build_ext):
-    '''Overide get_export_symbols to provide them for Windows DLL.'''
+    '''Override get_export_symbols to provide them for Windows DLL.'''
     def get_export_symbols(self, ext):
         '''Only for generating Windows DLL.'''
         def_file = GLPK_SRC_DIR / '../w64/glpk_4_65.def'
@@ -41,7 +41,7 @@ include_dirs = [
 
 setup(
     name='scikit-glpk',
-    version='0.4.3',
+    version='0.4.4',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',

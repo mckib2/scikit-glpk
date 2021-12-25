@@ -144,13 +144,14 @@ def mpswrite(
         A_eq=None,
         b_eq=None,
         bounds=None,
+        integrality=None,
         sense=GLPK.GLP_MIN,
         filename='prob.mps',
         fmt=GLPK.GLP_MPS_FILE):
     '''Write an MPS file.'''
 
     filename = pathlib.Path(filename)
-    prob, _lp = _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, filename.stem)
+    prob, _lp = _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, sense, filename.stem)
 
     # Get the library
     _lib = GLPK()._lib
