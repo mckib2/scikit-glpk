@@ -6,7 +6,7 @@ import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.optimize._linprog_util import _LPProblem, _clean_inputs
 
-from ._glpk_defines import GLPK, glp_prob
+from ._glpk_defines import GLPK
 
 
 def _convert_bounds(processed_bounds):
@@ -30,10 +30,11 @@ def _convert_bounds(processed_bounds):
     return bounds
 
 
-def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, prob_name):
+def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, sense, prob_name):
     '''Create and populate GLPK prob struct from linprog definition.'''
 
     # Housekeeping
+    # TODO: modify to use integrality after https://github.com/mckib2/scipy/pull/28 makes it into scipy master
     lp = _clean_inputs(_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, None))
     c, A_ub, b_ub, A_eq, b_eq, processed_bounds, _x0 = lp
 
@@ -67,6 +68,9 @@ def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, prob_name):
         if bnd is not None:
             _lib.glp_set_col_bnds(prob, ii + first_col, bnd[0], bnd[1], bnd[2])
         # else: default is GLP_FX with lb=0, ub=0
+
+        if integrality and integrality[ii] == 1:
+            _lib.glp_set_col_kind(prob, ii + first_col, GLPK.GLP_IV)
 
     # Need to load both matrices at the same time
     first_row = _lib.glp_add_rows(prob, A.shape[0])
