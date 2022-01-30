@@ -484,6 +484,12 @@ class GLPK:
             ctypes.c_int, # jth col
         ]
 
+        _lib.glp_get_col_kind.restype = ctypes.c_int
+        _lib.glp_set_col_kind.argtypes = [
+            ctypes.POINTER(glp_prob),
+            ctypes.c_int,  # jth col
+        ]
+
         _lib.glp_set_col_kind.restype = None
         _lib.glp_set_col_kind.argtypes = [
             ctypes.POINTER(glp_prob),
