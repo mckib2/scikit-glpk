@@ -77,6 +77,8 @@ def mpsread(filename: str, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob: bool = False, re
     valarr = ctypes.c_double*(n+1)
     col_ind = indarr()
     row_val = valarr()
+
+    db_row_count = 0
     for ii in range(1, m+1):
         row_type = _lib.glp_get_row_type(prob, ii)
         l = _lib.glp_get_mat_row(prob, ii, col_ind, row_val)
@@ -89,7 +91,7 @@ def mpsread(filename: str, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob: bool = False, re
             b_ub.append(_lib.glp_get_row_ub(prob, ii))
             for jj in range(1, l+1):
                 ub_cols.append(col_ind[jj] - 1)
-                ub_rows.append(ii - 1)
+                ub_rows.append(ii - 1 + db_row_count)
                 ub_vals.append(row_val[jj])
         elif row_type == GLPK.GLP_FX:
             b_eq.append(_lib.glp_get_row_lb(prob, ii))
@@ -101,10 +103,23 @@ def mpsread(filename: str, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob: bool = False, re
             b_ub.append(-1*_lib.glp_get_row_lb(prob, ii))
             for jj in range(1, l+1):
                 ub_cols.append(col_ind[jj] - 1)
-                ub_rows.append(ii - 1)
+                ub_rows.append(ii - 1 + db_row_count)
                 ub_vals.append(-1*row_val[jj])
+        elif row_type == GLPK.GLP_DB:
+            # Split into two constraints
+            b_ub.append(-1*_lib.glp_get_row_lb(prob, ii))
+            for jj in range(1, l+1):
+                ub_cols.append(col_ind[jj] - 1)
+                ub_rows.append(ii - 1 + db_row_count)
+                ub_vals.append(-1*row_val[jj])
+            b_ub.append(_lib.glp_get_row_ub(prob, ii))
+            for jj in range(1, l+1):
+                ub_cols.append(col_ind[jj] - 1)
+                ub_rows.append(ii + db_row_count)  # The missing -1 here is intentional, it is an extra row
+                ub_vals.append(row_val[jj])
+            db_row_count += 1
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f"Row type {row_type} is not supported")
 
     if ub_vals:
         # Converting to csc_matrix gets rid of all-zero rows
@@ -136,6 +151,9 @@ def mpsread(filename: str, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob: bool = False, re
             bounds[jj-1] = (0, 1)
 
     if read_additional_info:
+        if db_row_count != 0:
+            raise NotImplementedError("Additional info is not supported when the GLPK structure contains a DB row (lb <= x <= ub")
+
         additional_info = {'col_names': [_lib.glp_get_col_name(prob, ii).decode('utf-8') for ii in range(1, n + 1)],
                            'row_names': [_lib.glp_get_row_name(prob, ii).decode('utf-8') for ii in range(1, m + 1)],
                            'col_types': [_lib.glp_get_col_type(prob, ii) for ii in range(1, n + 1)],
