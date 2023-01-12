@@ -1,2 +1,2 @@
 include requirements.txt
-graft glpk-4.65
+graft glpk-5.0

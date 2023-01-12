@@ -5,7 +5,7 @@ from setuptools import find_packages
 from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext as _build_ext
 
-GLPK_SRC_DIR = pathlib.Path('glpk-4.65/src')
+GLPK_SRC_DIR = pathlib.Path('glpk-5.0/src')
 
 
 def scrape_makefile_list(filename, START_TOKEN, END_TOKEN):
@@ -22,7 +22,8 @@ class build_ext(_build_ext):
     """Override get_export_symbols to provide them for Windows DLL."""
     def get_export_symbols(self, ext):
         """Only for generating Windows DLL."""
-        def_file = GLPK_SRC_DIR / '../w64/glpk_4_65.def'
+        # TODO: use w32 variant if win32 support needed
+        def_file = GLPK_SRC_DIR / '../w64/glpk_5_0.def'
         return scrape_makefile_list(def_file, 'EXPORTS\n', ';; end of file ;;')
 
 
@@ -41,7 +42,7 @@ include_dirs = [
 
 setup(
     name='scikit-glpk',
-    version='0.4.5',
+    version='0.5.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     url='https://github.com/mckib2/scikit-glpk',
@@ -55,7 +56,7 @@ setup(
 
     ext_modules=[
         Extension(
-            'glpk4_65',
+            'glpk5_0',
             sources=sources,
             include_dirs=include_dirs,
             language='c',

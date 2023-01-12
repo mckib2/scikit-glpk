@@ -155,7 +155,7 @@ class glp_prob(ctypes.Structure):
 class GLPK:
 
     # Where is GLPK? Find where the C extension module was installed:
-    _glpk_lib_path = importlib.util.find_spec("glpk4_65").origin
+    _glpk_lib_path = importlib.util.find_spec("glpk5_0").origin
 
     # FIXME: this looks like it has dubious portability
     INT_MAX = ctypes.c_uint(-1).value // 2
