@@ -1,6 +1,5 @@
 import ctypes
 import pathlib
-import os
 
 import numpy as np
 from scipy.sparse import coo_matrix
@@ -9,8 +8,8 @@ from ._glpk_defines import GLPK
 from ._utils import _fill_prob
 
 
-def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_additional_info=False):
-    '''Read an MPS file.
+def mpsread(filename: str, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob: bool = False, read_additional_info: bool = False):
+    """Read an MPS file.
 
     Parameters
     ----------
@@ -35,7 +34,7 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_additional
         All types constants (e.g. GLP_FR, GLP_MIN)  are contained in GLPK.{constant name}
         If ``True``, additional info is returned.
         Default is ``False``.
-    '''
+    """
 
     _lib = GLPK()._lib
 
@@ -107,8 +106,6 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_additional
         else:
             raise NotImplementedError()
 
-
-
     if ub_vals:
         # Converting to csc_matrix gets rid of all-zero rows
         A_ub = coo_matrix((ub_vals, (ub_rows, ub_cols)), shape=(max(ub_rows)+1, n))
@@ -146,9 +143,9 @@ def mpsread(filename, fmt=GLPK.GLP_MPS_FILE, ret_glp_prob=False, read_additional
                            'prob_name': _lib.glp_get_prob_name(prob), 'obj_name': _lib.glp_get_obj_name(prob),
                            'obj_dir': _lib.glp_get_obj_dir(prob)}
 
-        return (c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, additional_info)
+        return c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, additional_info
     else:
-        return(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality)
+        return c, A_ub, b_ub, A_eq, b_eq, bounds, integrality
 
 
 def mpswrite(
@@ -159,13 +156,15 @@ def mpswrite(
         b_eq=None,
         bounds=None,
         integrality=None,
+        binary=None,
         sense=GLPK.GLP_MIN,
-        filename='prob.mps',
+        filename: str = 'prob.mps',
         fmt=GLPK.GLP_MPS_FILE):
-    '''Write an MPS file.'''
+    """Write an MPS file."""
 
     filename = pathlib.Path(filename)
-    prob, _lp = _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, sense, filename.stem)
+    prob, _lp = _fill_prob(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                           integrality=integrality, binary=binary, sense=sense, prob_name=filename.stem)
 
     # Get the library
     _lib = GLPK()._lib
@@ -176,17 +175,20 @@ def mpswrite(
 
 
 def lpwrite(c,
-        A_ub=None,
-        b_ub=None,
-        A_eq=None,
-        b_eq=None,
-        bounds=None,
-        sense=GLPK.GLP_MIN,
-        filename='prob.lp'):
-    '''Write a CPLEX LP file.'''
+            A_ub=None,
+            b_ub=None,
+            A_eq=None,
+            b_eq=None,
+            bounds=None,
+            integrality=None,
+            binary=None,
+            sense=GLPK.GLP_MIN,
+            filename: str = 'prob.lp'):
+    """Write a CPLEX LP file."""
 
     filename = pathlib.Path(filename)
-    prob, _lp = _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, filename.stem)
+    prob, _lp = _fill_prob(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                           integrality=integrality, binary=binary, sense=sense, prob_name=filename.stem)
 
     # Get the library
     _lib = GLPK()._lib

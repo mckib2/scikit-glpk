@@ -1,4 +1,4 @@
-'''GLPK integration.'''
+"""GLPK integration."""
 
 import ctypes
 from warnings import warn
@@ -19,19 +19,19 @@ def glpk(
         A_eq=None,
         b_eq=None,
         bounds=None,
-        solver='simplex',
+        solver: str = 'simplex',
         sense=GLPK.GLP_MIN,
-        scale=True,
-        maxit=GLPK.INT_MAX,
-        timeout=GLPK.INT_MAX,
-        basis_fac='luf+ft',
+        scale: bool = True,
+        maxit: int = GLPK.INT_MAX,
+        timeout: int = GLPK.INT_MAX,
+        basis_fac: str = 'luf+ft',
         message_level=GLPK.GLP_MSG_ERR,
-        disp=False,
+        disp: bool = False,
         simplex_options=None,
         ip_options=None,
         mip_options=None,
 ):
-    '''GLPK ctypes interface.
+    """GLPK ctypes interface.
 
     Parameters
     ----------
@@ -60,7 +60,7 @@ def glpk(
         Scale the problem. Default is ``True``.
     maxit : int
         Maximum number of iterations. Default is ``INT_MAX``.
-    timout : int
+    timeout : int
         Limit solution time to ``timeout`` seconds.
         Default is ``INT_MAX``.
     basis_fac : { 'luf+ft', 'luf+cbg', 'luf+cgr', 'btf+cbg', 'btf+cgr' }
@@ -247,7 +247,7 @@ def glpk(
                 (Default: 1e-7).
             - mip_gap : float
                 Relative mip gap tolerance. If the relative mip gap for
-                currently known best integer feasiblesolution falls below
+                currently known best integer feasible solution falls below
                 this tolerance, the solver terminates the search. This allows
                 obtaining suboptimal integer feasible solutions if solving the
                 problem to optimality takes too long time.
@@ -261,7 +261,7 @@ def glpk(
     -----
     In general, don't change tolerances without a detailed understanding
     of their purposes.
-    '''
+    """
 
     # Housekeeping
     if simplex_options is None:
@@ -271,9 +271,28 @@ def glpk(
     if mip_options is None:
         mip_options = {}
 
+    # Make variables integer- and binary-valued
+    if not mip_options.get('nomip', False):
+        intcon = mip_options.get('intcon', None)
+        bincon = mip_options.get('bincon', None)
+        if intcon:
+            integrality = np.zeros(len(c), dtype=bool)
+            integrality[intcon] = True
+        else:
+            integrality = None
+        if bincon:
+            binary = np.zeros(len(c), dtype=bool)
+            binary[bincon] = True
+        else:
+            binary = None
+    else:
+        integrality = None
+        binary = None
+
     # Create and fill the GLPK problem struct
-    prob, lp = _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, sense, 'problem-name')
-    c, A_ub, b_ub, A_eq, b_eq, bounds, _x0 = lp
+    prob, c, A_ub, b_ub, A_eq, b_eq, processed_bounds, integrality, binary = _fill_prob(
+        c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds, sense=sense,
+        integrality=integrality, binary=binary, prob_name='problem-name')
 
     # Get the library
     _lib = GLPK()._lib
@@ -282,8 +301,7 @@ def glpk(
     no_need_explict_scale = (solver == "simplex" and 
                              simplex_options.get("presolve"))
     if not no_need_explict_scale and scale:
-        _lib.glp_scale_prob(prob, GLPK.GLP_SF_AUTO) # do auto scaling for now
-
+        _lib.glp_scale_prob(prob, GLPK.GLP_SF_AUTO)  # do auto-scale for now
 
     # Select basis factorization method
     bfcp = glp_bfcp()
@@ -435,15 +453,6 @@ def glpk(
         iocp = glp_iocp()
         _lib.glp_init_iocp(ctypes.byref(iocp))
 
-        # Make variables integer- and binary-valued
-        if not mip_options.get('nomip', False):
-            intcon = mip_options.get('intcon', [])
-            for jj in intcon:
-                _lib.glp_set_col_kind(prob, jj+1, GLPK.GLP_IV)
-            bincon = mip_options.get('bincon', [])
-            for jj in bincon:
-                _lib.glp_set_col_kind(prob, jj+1, GLPK.GLP_BV)
-
         # Set options
         iocp.msg_lev = message_level*disp
         iocp.br_tech = {
@@ -540,7 +549,3 @@ def glpk(
     # }[res.status]
 
     return res
-
-
-if __name__ == '__main__':
-    pass

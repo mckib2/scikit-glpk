@@ -1,4 +1,4 @@
-'''Wrappers over utility API routines.'''
+"""Wrappers over utility API routines."""
 
 import ctypes
 
@@ -30,13 +30,25 @@ def _convert_bounds(processed_bounds):
     return bounds
 
 
-def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, sense, prob_name):
-    '''Create and populate GLPK prob struct from linprog definition.'''
+def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, binary, sense, prob_name: str):
+    """Create and populate GLPK prob struct from linprog definition."""
 
     # Housekeeping
-    # TODO: modify to use integrality after https://github.com/mckib2/scipy/pull/28 makes it into scipy master
-    lp = _clean_inputs(_LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, None))
-    c, A_ub, b_ub, A_eq, b_eq, processed_bounds, _x0 = lp
+    lp = _clean_inputs(_LPProblem(
+        c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+        bounds=bounds, x0=None, integrality=None))
+    c, A_ub, b_ub, A_eq, b_eq, processed_bounds, _x0, _integrality = lp
+
+    # handle GLPK integrality parameters apart from scipy's machinery
+    # as we can have binary and integer valued variables
+    if integrality is None or np.sum(integrality) == 0:
+        integrality = None
+    else:
+        integrality = np.array(integrality, dtype=bool)
+    if binary is None or np.sum(binary) == 0:
+        binary = None
+    else:
+        binary = np.array(binary, dtype=bool)
 
     # coo for (i, j, val) format
     A = coo_matrix(np.concatenate((A_ub, A_eq), axis=0))
@@ -63,14 +75,17 @@ def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, sense, prob_name)
     first_col = _lib.glp_add_cols(prob, len(c))
     for ii, (c0, bnd) in enumerate(zip(c, bounds)):
         _lib.glp_set_obj_coef(prob, ii + first_col, c0)
-        _lib.glp_set_col_name(prob, ii + first_col, b'c%d' % ii) # name is c[idx], idx is 0-based index
+        _lib.glp_set_col_name(prob, ii + first_col, b'c%d' % ii)  # name is c[idx], idx is 0-based index
 
         if bnd is not None:
             _lib.glp_set_col_bnds(prob, ii + first_col, bnd[0], bnd[1], bnd[2])
         # else: default is GLP_FX with lb=0, ub=0
 
-        if integrality and integrality[ii] == 1:
+        if integrality is not None and integrality[ii]:
             _lib.glp_set_col_kind(prob, ii + first_col, GLPK.GLP_IV)
+
+        if binary is not None and binary[ii]:
+            _lib.glp_set_col_kind(prob, ii + first_col, GLPK.GLP_BV)
 
     # Need to load both matrices at the same time
     first_row = _lib.glp_add_rows(prob, A.shape[0])
@@ -98,4 +113,4 @@ def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, sense, prob_name)
     for ii, b0 in enumerate(b_eq):
         _lib.glp_set_row_bnds(prob, ii + first_row + len(b_ub), GLPK.GLP_FX, b0, b0)
 
-    return prob, lp
+    return prob, c, A_ub, b_ub, A_eq, b_eq, processed_bounds, integrality, binary

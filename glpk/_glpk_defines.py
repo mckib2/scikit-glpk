@@ -5,6 +5,8 @@ import importlib.util
 from numpy.ctypeslib import ndpointer
 
 # control structures
+
+
 class glp_smcp(ctypes.Structure):
     _fields_ = [
         ('msg_lev', ctypes.c_int),
@@ -27,6 +29,7 @@ class glp_smcp(ctypes.Structure):
         ('foobar', ctypes.c_double*33),
     ]
 
+
 class glp_iptcp(ctypes.Structure):
     _fields_ = [
         ('msg_lev', ctypes.c_int),
@@ -34,60 +37,66 @@ class glp_iptcp(ctypes.Structure):
         ('foo_bar', ctypes.c_double*48),
     ]
 
+
 class glp_mpscp(ctypes.Structure):
     _fields_ = []
 
+
 class glp_bfcp(ctypes.Structure):
     _fields_ = [
-        ('msg_lev', ctypes.c_int),       # (not used)
-        ('type', ctypes.c_int),          # factorization type
-        ('lu_size', ctypes.c_int),       # (not used)
-        ('piv_tol', ctypes.c_double),    # sgf_piv_tol
-        ('piv_lim', ctypes.c_int),       # sgf_piv_lim
-        ('suhl', ctypes.c_int),          # sgf_suhl
-        ('eps_tol', ctypes.c_double),    # sgf_eps_tol
-        ('max_gro', ctypes.c_double),    # (not used)
-        ('nfs_max', ctypes.c_int),       # fhvint.nfs_max
-        ('upd_tol', ctypes.c_double),    # (not used)
-        ('nrs_max', ctypes.c_int),       # scfint.nn_max
-        ('rs_size', ctypes.c_int),       # (not used)
-        ('foo_bar', ctypes.c_double*38), # (reserved)
+        ('msg_lev', ctypes.c_int),        # (not used)
+        ('type', ctypes.c_int),           # factorization type
+        ('lu_size', ctypes.c_int),        # (not used)
+        ('piv_tol', ctypes.c_double),     # sgf_piv_tol
+        ('piv_lim', ctypes.c_int),        # sgf_piv_lim
+        ('suhl', ctypes.c_int),           # sgf_suhl
+        ('eps_tol', ctypes.c_double),     # sgf_eps_tol
+        ('max_gro', ctypes.c_double),     # (not used)
+        ('nfs_max', ctypes.c_int),        # fhvint.nfs_max
+        ('upd_tol', ctypes.c_double),     # (not used)
+        ('nrs_max', ctypes.c_int),        # scfint.nn_max
+        ('rs_size', ctypes.c_int),        # (not used)
+        ('foo_bar', ctypes.c_double*38),  # (reserved)
     ]
 
 # integer optimizer control parameters
+
+
 class glp_tree(ctypes.Structure):
     _fields_ = []
+
+
 class glp_iocp(ctypes.Structure):
     _fields_ = [
-        ('msg_lev', ctypes.c_int),       # message level (see glp_smcp)
-        ('br_tech', ctypes.c_int),       # branching technique
-        ('bt_tech', ctypes.c_int),       # backtracking technique:
-        ('tol_int', ctypes.c_double),    # mip.tol_int
-        ('tol_obj', ctypes.c_double),    # mip.tol_obj
-        ('tm_lim', ctypes.c_int),        # mip.tm_lim (milliseconds)
-        ('out_frq', ctypes.c_int),       # mip.out_frq (milliseconds)
-        ('out_dly', ctypes.c_int),       # mip.out_dly (milliseconds)
-        #void (*cb_func)(glp_tree *T, void *info);  # mip.cb_func
+        ('msg_lev', ctypes.c_int),        # message level (see glp_smcp)
+        ('br_tech', ctypes.c_int),        # branching technique
+        ('bt_tech', ctypes.c_int),        # backtracking technique:
+        ('tol_int', ctypes.c_double),     # mip.tol_int
+        ('tol_obj', ctypes.c_double),     # mip.tol_obj
+        ('tm_lim', ctypes.c_int),         # mip.tm_lim (milliseconds)
+        ('out_frq', ctypes.c_int),        # mip.out_frq (milliseconds)
+        ('out_dly', ctypes.c_int),        # mip.out_dly (milliseconds)
+        # void (*cb_func)(glp_tree *T, void *info);  # mip.cb_func
         ('cb_func', ctypes.CFUNCTYPE(None, ctypes.POINTER(glp_tree), ctypes.c_void_p)),
-        ('cb_info', ctypes.c_void_p),    # mip.cb_info
-        ('cb_size', ctypes.c_int),       # mip.cb_size
-        ('pp_tech', ctypes.c_int),       # preprocessing technique:
-        ('mip_gap', ctypes.c_double),    # relative MIP gap tolerance
-        ('mir_cuts', ctypes.c_int),      # MIR cuts       (GLP_ON/GLP_OFF)
-        ('gmi_cuts', ctypes.c_int),      # Gomory's cuts  (GLP_ON/GLP_OFF)
-        ('cov_cuts', ctypes.c_int),      # cover cuts     (GLP_ON/GLP_OFF)
-        ('clq_cuts', ctypes.c_int),      # clique cuts    (GLP_ON/GLP_OFF)
-        ('presolve', ctypes.c_int),      # enable/disable using MIP presolver
-        ('binarize', ctypes.c_int),      # try to binarize integer variables
-        ('fp_heur', ctypes.c_int),       # feasibility pump heuristic
-        ('ps_heur', ctypes.c_int),       # proximity search heuristic
-        ('ps_tm_lim', ctypes.c_int),     # proxy time limit, milliseconds
-        ('sr_heur', ctypes.c_int),       # simple rounding heuristic
-        ('use_sol', ctypes.c_int),       # use existing solution
-        ('save_sol', ctypes.c_char_p),   # filename to save every new solution
-        ('alien', ctypes.c_int),         # use alien solver
-        ('flip', ctypes.c_int),          # use long-step dual simplex; not documented--should not be used
-        ('foo_bar', ctypes.c_double*23), # (reserved)
+        ('cb_info', ctypes.c_void_p),     # mip.cb_info
+        ('cb_size', ctypes.c_int),        # mip.cb_size
+        ('pp_tech', ctypes.c_int),        # preprocessing technique:
+        ('mip_gap', ctypes.c_double),     # relative MIP gap tolerance
+        ('mir_cuts', ctypes.c_int),       # MIR cuts       (GLP_ON/GLP_OFF)
+        ('gmi_cuts', ctypes.c_int),       # Gomory's cuts  (GLP_ON/GLP_OFF)
+        ('cov_cuts', ctypes.c_int),       # cover cuts     (GLP_ON/GLP_OFF)
+        ('clq_cuts', ctypes.c_int),       # clique cuts    (GLP_ON/GLP_OFF)
+        ('presolve', ctypes.c_int),       # enable/disable using MIP presolver
+        ('binarize', ctypes.c_int),       # try to binarize integer variables
+        ('fp_heur', ctypes.c_int),        # feasibility pump heuristic
+        ('ps_heur', ctypes.c_int),        # proximity search heuristic
+        ('ps_tm_lim', ctypes.c_int),      # proxy time limit, milliseconds
+        ('sr_heur', ctypes.c_int),        # simple rounding heuristic
+        ('use_sol', ctypes.c_int),        # use existing solution
+        ('save_sol', ctypes.c_char_p),    # filename to save every new solution
+        ('alien', ctypes.c_int),          # use alien solver
+        ('flip', ctypes.c_int),           # use long-step dual simplex; not documented--should not be used
+        ('foo_bar', ctypes.c_double*23),  # (reserved)
     ]
 
 
@@ -95,16 +104,22 @@ class glp_iocp(ctypes.Structure):
 class glp_prob(ctypes.Structure):
     class DMP(ctypes.Structure):
         _fields_ = []
+
     class glp_tree(ctypes.Structure):
         _fields_ = []
+
     class GLPROW(ctypes.Structure):
         _fields_ = []
+
     class GLPCOL(ctypes.Structure):
         _fields_ = []
+
     class AVL(ctypes.Structure):
         _fields_ = []
+
     class BFD(ctypes.Structure):
         _fields_ = []
+
     # shouldn't access these directly!
     _fields_ = [
         ('pool', ctypes.POINTER(DMP)),
@@ -136,12 +151,13 @@ class glp_prob(ctypes.Structure):
         ('mip_obj', ctypes.c_double),
     ]
 
+
 class GLPK:
 
     # Where is GLPK? Find where the C extension module was installed:
     _glpk_lib_path = importlib.util.find_spec("glpk4_65").origin
 
-
+    # FIXME: this looks like it has dubious portability
     INT_MAX = ctypes.c_uint(-1).value // 2
     GLP_ON = 1
     GLP_OFF = 0
@@ -163,31 +179,31 @@ class GLPK:
     }
 
     # Pricing techniques
-    GLP_PT_STD = 17 # 0x11 # standard (Dantzig's rule)
-    GLP_PT_PSE = 34 # 0x22 # projected steepest edge
+    GLP_PT_STD = 17  # 0x11 # standard (Dantzig's rule)
+    GLP_PT_PSE = 34  # 0x22 # projected steepest edge
 
     # Ratio test techniques
-    GLP_RT_STD = 17 # 0x11
-    GLP_RT_HAR = 34 # 0x22
-    GLP_RT_FLIP = 51 # 0x33
+    GLP_RT_STD = 17  # 0x11
+    GLP_RT_HAR = 34  # 0x22
+    GLP_RT_FLIP = 51  # 0x33
 
     # Objective sense
     GLP_MIN = 1
     GLP_MAX = 2
 
     # Bound types
-    GLP_FR = 1 # -inf <  x  < +inf
-    GLP_LO = 2 #   lb <= x  < +inf
-    GLP_UP = 3 # -inf <  x <= ub
-    GLP_DB = 4 #   lb <= x <= ub
-    GLP_FX = 5 #   lb == x == ub
+    GLP_FR = 1  # -inf < x < +inf
+    GLP_LO = 2  # lb <= x < +inf
+    GLP_UP = 3  # -inf < x <= ub
+    GLP_DB = 4  # lb <= x <= ub
+    GLP_FX = 5  # lb == x == ub
 
     # Scaling techniques
-    GLP_SF_GM = 1     # 0x01   # geometric scaling
-    GLP_SF_EQ = 16    # 0x10   # equilibration scaling
-    GLP_SF_2N = 3     # 0x20   # round scale factors to nearest power of two
-    GLP_SF_SKIP = 64  # 0x40 # skip scaling, if the problem is well scaled
-    GLP_SF_AUTO = 128 # 0x80 # choose scaling options automatically
+    GLP_SF_GM = 1      # 0x01   # geometric scaling
+    GLP_SF_EQ = 16     # 0x10   # equilibration scaling
+    GLP_SF_2N = 3      # 0x20   # round scale factors to nearest power of two
+    GLP_SF_SKIP = 64   # 0x40 # skip scaling, if the problem is well scaled
+    GLP_SF_AUTO = 128  # 0x80 # choose scaling options automatically
 
     # return codes for glp_simplex driver
     SUCCESS = 0
@@ -213,15 +229,15 @@ class GLPK:
 
     RET_CODES = {
         SUCCESS: 'LP problem instance has been successfully solved',
-        GLP_EBADB:'invalid basis',
-        GLP_ESING:'singular matrix',
-        GLP_ECOND:'ill-conditioned matrix',
-        GLP_EBOUND:'invalid bounds',
-        GLP_EFAIL:'solver failed',
-        GLP_EOBJLL:'objective lower limit reached',
-        GLP_EOBJUL:'objective upper limit reached',
-        GLP_EITLIM:'iteration limit exceeded',
-        GLP_ETMLIM:'time limit exceeded',
+        GLP_EBADB: 'invalid basis',
+        GLP_ESING: 'singular matrix',
+        GLP_ECOND: 'ill-conditioned matrix',
+        GLP_EBOUND: 'invalid bounds',
+        GLP_EFAIL: 'solver failed',
+        GLP_EOBJLL: 'objective lower limit reached',
+        GLP_EOBJUL: 'objective upper limit reached',
+        GLP_EITLIM: 'iteration limit exceeded',
+        GLP_ETMLIM: 'time limit exceeded',
         GLP_ENOPFS: 'no primal feasible solution',
         GLP_ENODFS: 'no dual feasible solution',
         GLP_EROOT: 'root LP optimum not provided',
@@ -257,11 +273,11 @@ class GLPK:
     GLP_MPS_FILE = 2  # free (modern)
 
     # Factorization strategies
-    GLP_BF_LUF = 0  # 0x00  # plain LU-factorization
-    GLP_BF_BTF = 16 # 0x10  # block triangular LU-factorization
-    GLP_BF_FT = 1   # 0x01  # Forrest-Tomlin (LUF only)
-    GLP_BF_BG = 2   # 0x02  # Schur compl. + Bartels-Golub
-    GLP_BF_GR = 3   # 0x03  # Schur compl. + Givens rotation
+    GLP_BF_LUF = 0   # 0x00  # plain LU-factorization
+    GLP_BF_BTF = 16  # 0x10  # block triangular LU-factorization
+    GLP_BF_FT = 1    # 0x01  # Forrest-Tomlin (LUF only)
+    GLP_BF_BG = 2    # 0x02  # Schur compl. + Bartels-Golub
+    GLP_BF_GR = 3    # 0x03  # Schur compl. + Givens rotation
 
     # Branching techniques
     GLP_BR_FFV = 1  # first fractional variable
@@ -277,14 +293,14 @@ class GLPK:
     GLP_BT_BPH = 4  # best projection heuristic
 
     # MIP preprocessing
-    GLP_PP_NONE =  0 # disable preprocessing
-    GLP_PP_ROOT =  1 # preprocessing only on root level
+    GLP_PP_NONE = 0  # disable preprocessing
+    GLP_PP_ROOT = 1  # preprocessing only on root level
     GLP_PP_ALL = 2   # preprocessing on all levels
 
     # Variable types
-    GLP_CV = 1 # continuous variable
-    GLP_IV = 2 # integer variable
-    GLP_BV = 3 # binary variable
+    GLP_CV = 1  # continuous variable
+    GLP_IV = 2  # integer variable
+    GLP_BV = 3  # binary variable
 
     def __init__(self):
 
@@ -317,10 +333,10 @@ class GLPK:
         _lib.glp_set_col_bnds.restype = None
         _lib.glp_set_col_bnds.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int,    # col index (1-based)
-            ctypes.c_int,    # type
-            ctypes.c_double, # lb
-            ctypes.c_double, # up
+            ctypes.c_int,     # col index (1-based)
+            ctypes.c_int,     # type
+            ctypes.c_double,  # lb
+            ctypes.c_double,  # up
         ]
 
         _lib.glp_add_rows.restype = ctypes.c_int
@@ -329,19 +345,19 @@ class GLPK:
         _lib.glp_load_matrix.restype = None
         _lib.glp_load_matrix.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int,                                     # nnz
-            ndpointer(ctypes.c_int, flags='C_CONTIGUOUS'),    # row indices
-            ndpointer(ctypes.c_int, flags='C_CONTIGUOUS'),    # col indices
-            ndpointer(ctypes.c_double, flags='C_CONTIGUOUS'), # values
+            ctypes.c_int,                                      # nnz
+            ndpointer(ctypes.c_int, flags='C_CONTIGUOUS'),     # row indices
+            ndpointer(ctypes.c_int, flags='C_CONTIGUOUS'),     # col indices
+            ndpointer(ctypes.c_double, flags='C_CONTIGUOUS'),  # values
         ]
 
         _lib.glp_set_row_bnds.restype = None
         _lib.glp_set_row_bnds.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int,    # row index (1-based)
-            ctypes.c_int,    # type
-            ctypes.c_double, # lb
-            ctypes.c_double, # ub
+            ctypes.c_int,     # row index (1-based)
+            ctypes.c_int,     # type
+            ctypes.c_double,  # lb
+            ctypes.c_double,  # ub
         ]
 
         _lib.glp_scale_prob.restype = None
@@ -384,48 +400,48 @@ class GLPK:
         _lib.glp_get_num_nz.restype = ctypes.c_int
         _lib.glp_get_num_nz.argtypes = [ctypes.POINTER(glp_prob)]
 
-        _lib.glp_get_mat_row.restype = ctypes.c_int # len of col indices and values
+        _lib.glp_get_mat_row.restype = ctypes.c_int  # len of col indices and values
         _lib.glp_get_mat_row.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # ith row
-            ctypes.POINTER(ctypes.c_int), # col indices
-            ctypes.POINTER(ctypes.c_double), # values
+            ctypes.c_int,  # ith row
+            ctypes.POINTER(ctypes.c_int),  # col indices
+            ctypes.POINTER(ctypes.c_double),  # values
         ]
 
         _lib.glp_get_row_type.restype = ctypes.c_int
         _lib.glp_get_row_type.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # ith row
+            ctypes.c_int,  # ith row
         ]
 
         _lib.glp_get_row_lb.restype = ctypes.c_double
         _lib.glp_get_row_lb.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # ith row
+            ctypes.c_int,  # ith row
         ]
 
         _lib.glp_get_row_ub.restype = ctypes.c_double
         _lib.glp_get_row_ub.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # ith row
+            ctypes.c_int,  # ith row
         ]
 
         _lib.glp_get_col_type.restype = ctypes.c_int
         _lib.glp_get_col_type.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # jth col
+            ctypes.c_int,  # jth col
         ]
 
         _lib.glp_get_col_lb.restype = ctypes.c_double
         _lib.glp_get_col_lb.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # jth col
+            ctypes.c_int,  # jth col
         ]
 
         _lib.glp_get_col_ub.restype = ctypes.c_double
         _lib.glp_get_col_ub.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # jth col
+            ctypes.c_int,  # jth col
         ]
 
         _lib.glp_get_status.restype = ctypes.c_int
@@ -437,19 +453,19 @@ class GLPK:
         _lib.glp_get_col_prim.restype = ctypes.c_double
         _lib.glp_get_col_prim.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # primal value of jth col
+            ctypes.c_int,  # primal value of jth col
         ]
 
         _lib.glp_get_col_dual.restype = ctypes.c_double
         _lib.glp_get_col_dual.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # dual value of jth col
+            ctypes.c_int,  # dual value of jth col
         ]
 
         _lib.glp_get_row_dual.restype = ctypes.c_double
         _lib.glp_get_row_dual.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # dual value of ith row
+            ctypes.c_int,  # dual value of ith row
         ]
         
         # Interior point variants
@@ -462,13 +478,13 @@ class GLPK:
         _lib.glp_ipt_col_prim.restype = ctypes.c_double
         _lib.glp_ipt_col_prim.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # primal value of jth col
+            ctypes.c_int,  # primal value of jth col
         ]
 
         _lib.glp_ipt_col_dual.restype = ctypes.c_double
         _lib.glp_ipt_col_dual.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # dual value of jth col
+            ctypes.c_int,  # dual value of jth col
         ]
 
         # MIP variants
@@ -481,7 +497,7 @@ class GLPK:
         _lib.glp_mip_col_val.restype = ctypes.c_double
         _lib.glp_mip_col_val.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # jth col
+            ctypes.c_int,  # jth col
         ]
 
         _lib.glp_get_col_kind.restype = ctypes.c_int
@@ -493,8 +509,8 @@ class GLPK:
         _lib.glp_set_col_kind.restype = None
         _lib.glp_set_col_kind.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int, # jth col
-            ctypes.c_int, # type
+            ctypes.c_int,  # jth col
+            ctypes.c_int,  # type
         ]
 
         # Initialize control structures
@@ -530,24 +546,24 @@ class GLPK:
         _lib.glp_read_mps.restype = ctypes.c_int
         _lib.glp_read_mps.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int,              # format (GLP_MPS_DECK or GLP_MPS_FILE)
-            ctypes.POINTER(glp_mpscp), # should be NULL
-            ctypes.c_char_p,           # filename
+            ctypes.c_int,               # format (GLP_MPS_DECK or GLP_MPS_FILE)
+            ctypes.POINTER(glp_mpscp),  # should be NULL
+            ctypes.c_char_p,            # filename
         ]
 
         _lib.glp_write_mps.restype = ctypes.c_int
         _lib.glp_write_mps.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.c_int,              # format (GLP_MPS_DECK or GLP_MPS_FILE)
-            ctypes.POINTER(glp_mpscp), # should be NULL
-            ctypes.c_char_p,           # filename
+            ctypes.c_int,               # format (GLP_MPS_DECK or GLP_MPS_FILE)
+            ctypes.POINTER(glp_mpscp),  # should be NULL
+            ctypes.c_char_p,            # filename
         ]
 
         _lib.glp_write_lp.restype = ctypes.c_int
         _lib.glp_write_lp.argtypes = [
             ctypes.POINTER(glp_prob),
-            ctypes.POINTER(glp_mpscp), # should be NULL
-            ctypes.c_char_p,           # filename
+            ctypes.POINTER(glp_mpscp),  # should be NULL
+            ctypes.c_char_p,            # filename
         ]
         
         # LP Basis Factorization
@@ -556,7 +572,6 @@ class GLPK:
 
         _lib.glp_set_bfcp.restype = None
         _lib.glp_set_bfcp.argtypes = [ctypes.POINTER(glp_prob), ctypes.POINTER(glp_bfcp)]
-
 
         # Make accessible for front-end interface
         self._lib = _lib
