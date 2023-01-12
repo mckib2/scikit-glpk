@@ -1137,13 +1137,6 @@ int glp_read_ccdata(glp_graph *G, int v_wgt, const char *fname);
 int glp_write_ccdata(glp_graph *G, int v_wgt, const char *fname);
 /* write graph in DIMACS clique/coloring format */
 
-int glp_netgen(glp_graph *G, int v_rhs, int a_cap, int a_cost,
-      const int parm[1+15]);
-/* Klingman's network problem generator */
-
-void glp_netgen_prob(int nprob, int parm[1+15]);
-/* Klingman's standard network problem instance */
-
 int glp_gridgen(glp_graph *G, int v_rhs, int a_cap, int a_cost,
       const int parm[1+14]);
 /* grid-like network problem generator */

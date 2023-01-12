@@ -223,8 +223,6 @@ glp_read_asnprob
 glp_write_asnprob
 glp_read_ccdata
 glp_write_ccdata
-glp_netgen
-glp_netgen_prob
 glp_gridgen
 glp_rmfgen
 glp_weak_comp
