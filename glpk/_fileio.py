@@ -163,7 +163,7 @@ def mpswrite(
     """Write an MPS file."""
 
     filename = pathlib.Path(filename)
-    prob, _lp = _fill_prob(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+    prob, *_lp = _fill_prob(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
                            integrality=integrality, binary=binary, sense=sense, prob_name=filename.stem)
 
     # Get the library
@@ -187,7 +187,7 @@ def lpwrite(c,
     """Write a CPLEX LP file."""
 
     filename = pathlib.Path(filename)
-    prob, _lp = _fill_prob(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+    prob, *_lp = _fill_prob(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
                            integrality=integrality, binary=binary, sense=sense, prob_name=filename.stem)
 
     # Get the library
