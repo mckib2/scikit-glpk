@@ -3,7 +3,7 @@
 import ctypes
 
 import numpy as np
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_matrix, vstack
 from scipy.optimize._linprog_util import _LPProblem, _clean_inputs
 
 from ._glpk_defines import GLPK
@@ -50,8 +50,11 @@ def _fill_prob(c, A_ub, b_ub, A_eq, b_eq, bounds, integrality, binary, sense, pr
     else:
         binary = np.array(binary, dtype=bool)
 
+    # Convert to coo_matrices first so that we can concat the already sparse matrices
+    A_ub_coo = coo_matrix(A_ub)
+    A_eq_coo = coo_matrix(A_eq)
     # coo for (i, j, val) format
-    A = coo_matrix(np.concatenate((A_ub, A_eq), axis=0))
+    A = vstack((A_ub_coo, A_eq_coo))
 
     # Convert linprog-style bounds to GLPK-style bounds
     bounds = _convert_bounds(processed_bounds)
